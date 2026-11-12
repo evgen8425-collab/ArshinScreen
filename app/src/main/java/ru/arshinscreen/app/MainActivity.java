@@ -29,15 +29,17 @@ public final class MainActivity extends Activity {
   private String currentName;
   private final ArrayList<JSONObject> records=new ArrayList<>();
   private static final int BLUE=0xff15385a;
-  @Override public void onCreate(Bundle b){super.onCreate(b);String u=getPreferences(0).getString("folder",null);if(u!=null)folder=Uri.parse(u);searchScreen();}
+  private int dp(float n){return (int)(n*getResources().getDisplayMetrics().density+0.5f);}
+  private void addFieldLabel(String s){TextView t=label(s,14);t.setTextColor(BLUE);body.addView(t);}
+  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(0xfff7f9fc);getWindow().setNavigationBarColor(0xfff7f9fc);getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);String u=getPreferences(0).getString("folder",null);if(u!=null)folder=Uri.parse(u);searchScreen();}
   private TextView label(String value,int sp){TextView t=new TextView(this);t.setText(value);t.setTextSize(sp);t.setPadding(8,12,8,12);return t;}
-  private void button(String s,Runnable action){Button b=new Button(this);b.setText(s);b.setAllCaps(false);body.addView(b);b.setOnClickListener(v->action.run());}
-  private EditText input(String hint,String value){EditText e=new EditText(this);e.setSingleLine(true);e.setTextSize(16);e.setHint(hint);e.setText(value);body.addView(e);return e;}
+  private void button(String s,Runnable action){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(15);b.setMinHeight(dp(48));body.addView(b,new LinearLayout.LayoutParams(-1,-2));b.setOnClickListener(v->action.run());}
+  private EditText input(String hint,String value){EditText e=new EditText(this);e.setSingleLine(true);e.setTextSize(16);e.setHint(hint);e.setText(value);e.setSelectAllOnFocus(false);body.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));return e;}
   private void page(String title){
-    ScrollView scroll=new ScrollView(this);body=new LinearLayout(this);body.setOrientation(1);body.setPadding(20,20,20,30);scroll.addView(body);setContentView(scroll);
-    TextView heading=label(title,23);heading.setTextColor(BLUE);heading.setTypeface(null,1);body.addView(heading);
+    ScrollView scroll=new ScrollView(this);body=new LinearLayout(this);body.setOrientation(1);body.setPadding(dp(16),dp(12),dp(16),dp(28));scroll.addView(body);setContentView(scroll);
+    TextView heading=label(title,22);heading.setTextColor(BLUE);heading.setTypeface(null,1);body.addView(heading);
     LinearLayout tabs=new LinearLayout(this);body.addView(tabs);
-    for(String s:new String[]{"Поиск","Настройки","Файлы"}){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(12);tabs.addView(b,new LinearLayout.LayoutParams(0,-2,1));b.setOnClickListener(v->{if(s.equals("Поиск"))searchScreen();else if(s.equals("Настройки"))settings();else files();});}
+    for(String s:new String[]{"Поиск","Настройки","Файлы"}){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(12);b.setMinHeight(dp(44));b.setPadding(dp(2),0,dp(2),0);tabs.addView(b,new LinearLayout.LayoutParams(0,dp(52),1));b.setOnClickListener(v->{if(s.equals("Поиск"))searchScreen();else if(s.equals("Настройки"))settings();else files();});}
     message=label("",14);body.addView(message);
   }
   private void info(String s){runOnUiThread(()->{if(message!=null)message.setText(s);});}
@@ -47,9 +49,9 @@ public final class MainActivity extends Activity {
     new DatePickerDialog(this,(v,y,m,d)->e.setText(String.format(Locale.US,"%04d-%02d-%02d",y,m+1,d)),c.get(1),c.get(2),c.get(5)).show();}
   private void searchScreen(){
     page("Аршин Скрин");body.addView(label("Поиск поверки СИ",18));
-    serial=input("Заводской номер",pref("serial",""));verifier=input("Организация-поверитель (необязательно)",pref("verifier",""));
-    body.addView(label("Дата поверки с",14));from=input("ГГГГ-ММ-ДД",pref("from","2026-01-01"));from.setShowSoftInputOnFocus(false);from.setOnClickListener(v->datePicker(from));
-    body.addView(label("Дата поверки по",14));to=input("ГГГГ-ММ-ДД",pref("to",today()));to.setShowSoftInputOnFocus(false);to.setOnClickListener(v->datePicker(to));
+    addFieldLabel("Заводской номер");serial=input("Введите заводской номер",pref("serial",""));addFieldLabel("Поверитель (необязательно)");verifier=input("Название организации",pref("verifier",""));
+    addFieldLabel("Дата поверки с");from=input("ГГГГ-ММ-ДД",pref("from","2026-01-01"));from.setShowSoftInputOnFocus(false);from.setOnClickListener(v->datePicker(from));
+    addFieldLabel("Дата поверки по");to=input("ГГГГ-ММ-ДД",pref("to",today()));to.setShowSoftInputOnFocus(false);to.setOnClickListener(v->datePicker(to));
     button("Найти в Аршине",this::search);
     matches=new LinearLayout(this);matches.setOrientation(1);body.addView(matches);
   }
@@ -94,6 +96,7 @@ public final class MainActivity extends Activity {
     ArrayList<String> lines=new ArrayList<>();flatten("",data,lines,0);
     for(String s:lines)body.addView(label(s,13));
     button("Сохранить полный PDF",()->savePdf(id,lines));
+    button("Сохранить PDF на Google Диск",()->{try{ArrayList<String> all=new ArrayList<>();all.add("Сведения о результатах поверки СИ");all.add("Источник: ФГИС Аршин");all.add("Номер записи: "+id);all.add("https://fgis.gost.ru/fundmetrology/eapi/vri/"+id);all.add("");all.addAll(lines);currentPdf=pdf(all);currentName="Аршин_"+id.replaceAll("[^A-Za-z0-9_-]","_")+".pdf";chooseSave();info("В открывшемся окне выберите Google Диск и нужную папку.");}catch(Exception e){info(e.getMessage());}});
     button("Вернуться к поиску",this::searchScreen);
   }
   private void flatten(String prefix,Object value,ArrayList<String> out,int depth){
@@ -104,7 +107,7 @@ public final class MainActivity extends Activity {
   }
   private void savePdf(String id,ArrayList<String> lines){
     try{ArrayList<String> all=new ArrayList<>();all.add("Сведения о результатах поверки СИ");all.add("Источник: ФГИС Аршин");all.add("Номер записи: "+id);all.add("https://fgis.gost.ru/fundmetrology/eapi/vri/"+id);all.add("");all.addAll(lines);
-      currentPdf=pdf(all);currentName="Аршин_"+id.replaceAll("[^A-Za-z0-9_-]","_")+".pdf";
+      currentPdf=pdf(all);currentName="Аршин_"+id.replaceAll("[^A-Za-z0-9_-]","_")+"_"+new SimpleDateFormat("yyyyMMdd_HHmmss",Locale.US).format(new Date())+".pdf";
       if(folder==null){chooseSave();return;}
       try{String docId=DocumentsContract.getTreeDocumentId(folder);Uri parent=DocumentsContract.buildDocumentUriUsingTree(folder,docId);
         Uri dest=DocumentsContract.createDocument(getContentResolver(),parent,"application/pdf",currentName);if(dest==null)throw new IOException("Нет доступа");
@@ -124,7 +127,7 @@ public final class MainActivity extends Activity {
   private void settings(){page("Настройки");body.addView(label("Формат: PDF",17));
     body.addView(label("Локальная папка: Протоколы поверки СИ",16));body.addView(label(folder==null?"Выберите папку один раз":"Локальная папка подключена",14));
     button("Выбрать папку на смартфоне",()->{Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);startActivityForResult(i,PICK_FOLDER);});
-    body.addView(label("Google Диск: папка «Протоколы поверки СИ». Автоматическая загрузка пока не реализована.",15));
+    body.addView(label("Google Диск: при просмотре поверки нажмите «Сохранить PDF на Google Диск» и выберите папку через системное окно. Автоматическая синхронизация ещё не реализована.",15));
     button("Открыть Google Диск",()->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://drive.google.com/drive/u/0/my-drive"))));
   }
   private void files(){page("Сохранённые PDF");body.addView(label("Последний PDF: "+pref("last","ещё нет"),15));body.addView(label("Полная история и синхронизация с Google Диском — следующие этапы разработки.",14));}
