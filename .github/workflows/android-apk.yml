@@ -27,11 +27,6 @@ jobs:
           test -d "${ANDROID_HOME}" || (echo "Android SDK is unavailable" && exit 1)
           command -v sdkmanager || true
           ls "${ANDROID_HOME}/platforms" || true
-      - name: Install Android SDK API 35
-        shell: bash
-        run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
