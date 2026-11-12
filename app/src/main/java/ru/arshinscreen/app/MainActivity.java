@@ -152,11 +152,50 @@ public final class MainActivity extends Activity {
   }
   private void details(String id){if(id.isEmpty()){info("У записи нет идентификатора");return;}info("Загружаю карточку...");
     pool.execute(()->{try{JSONObject o=new JSONObject(get(API+"/"+enc(id)));runOnUiThread(()->recordScreen(id,o));}catch(Exception e){info("Ошибка получения записи: "+e.getMessage());}});}
+  private String fieldDeep(Object node,String... keys){
+    if(node instanceof JSONObject){
+      JSONObject j=(JSONObject)node;
+      for(String key:keys){
+        String value=j.optString(key,"");
+        if(!value.isEmpty()&&!value.equals("null")&&!value.startsWith("{")&&!value.startsWith("["))return value;
+      }
+      Iterator<String> it=j.keys();
+      while(it.hasNext()){String k=it.next();Object item=j.opt(k);if(item instanceof JSONObject||item instanceof JSONArray){String v=fieldDeep(item,keys);if(!v.isEmpty())return v;}}
+    }else if(node instanceof JSONArray){
+      JSONArray a=(JSONArray)node;
+      for(int i=0;i<a.length();i++){String v=fieldDeep(a.opt(i),keys);if(!v.isEmpty())return v;}
+    }
+    return "";
+  }
+  private String fileSafe(String s){
+    return s.replaceAll("[\\\\/:*?\"<>|\\\\p{Cntrl}]","_").trim();
+  }
+  private String verificationDate(String raw){
+    if(raw.matches("\\d{4}-\\d{2}-\\d{2}.*"))return raw.substring(8,10)+"."+raw.substring(5,7)+"."+raw.substring(2,4);
+    if(raw.matches("\\d{2}\\.\\d{2}\\.\\d{4}.*"))return raw.substring(0,6)+raw.substring(8,10);
+    if(raw.matches("\\d{2}\\.\\d{2}\\.\\d{2}.*"))return raw.substring(0,8);
+    return "";
+  }
+  private String makePdfName(JSONObject data,String recordId){
+    String serialNo=fieldDeep(data,"mi_number","manufacture_num","serial_number","factory_number");
+    String verified=fieldDeep(data,"verification_date","vri_date");
+    for(JSONObject r:records){
+      if(recordId.equals(pick(r,"vri_id","id"))){
+        if(serialNo.isEmpty())serialNo=pick(r,"mi_number");
+        if(verified.isEmpty())verified=pick(r,"verification_date");
+        break;
+      }
+    }
+    String date=verificationDate(verified);
+    if(serialNo.isEmpty()||date.isEmpty())return null;
+    int next=getPreferences(0).getInt("pdf_sequence",0)+1;
+    return String.format(Locale.US,"%03d_%s_%s.pdf",next,fileSafe(serialNo),date);
+  }
   private void recordScreen(String id,JSONObject data){page("Сведения о поверке");body.addView(label("Запись ФИФ: "+id,16));
     ArrayList<String> lines=new ArrayList<>();flatten("",data,lines,0);
     for(String s:lines)body.addView(label(s,13));
-    button("Сохранить полный PDF",()->savePdf(id,lines));
-    button("Сохранить PDF на Google Диск",()->{try{ArrayList<String> all=new ArrayList<>();all.add("Сведения о результатах поверки СИ");all.add("Источник: ФГИС Аршин");all.add("Номер записи: "+id);all.add("https://fgis.gost.ru/fundmetrology/eapi/vri/"+id);all.add("");all.addAll(lines);currentPdf=pdf(all);currentName="Аршин_"+id.replaceAll("[^A-Za-z0-9_-]","_")+".pdf";chooseSave();info("В открывшемся окне выберите Google Диск и нужную папку.");}catch(Exception e){info(e.getMessage());}});
+    button("Сохранить полный PDF",()->savePdf(id,data,lines,false));
+    button("Сохранить PDF на Google Диск",()->savePdf(id,data,lines,true));
     button("Вернуться к поиску",this::searchScreen);
   }
   private void flatten(String prefix,Object value,ArrayList<String> out,int depth){
@@ -165,17 +204,37 @@ public final class MainActivity extends Activity {
     else if(value instanceof JSONArray){JSONArray a=(JSONArray)value;for(int i=0;i<a.length();i++)flatten(prefix+" ["+(i+1)+"]",a.opt(i),out,depth+1);}
     else if(value!=null&&value!=JSONObject.NULL)out.add(prefix+": "+String.valueOf(value));
   }
-  private void savePdf(String id,ArrayList<String> lines){
-    try{ArrayList<String> all=new ArrayList<>();all.add("Сведения о результатах поверки СИ");all.add("Источник: ФГИС Аршин");all.add("Номер записи: "+id);all.add("https://fgis.gost.ru/fundmetrology/eapi/vri/"+id);all.add("");all.addAll(lines);
-      currentPdf=pdf(all);currentName="Аршин_"+id.replaceAll("[^A-Za-z0-9_-]","_")+"_"+new SimpleDateFormat("yyyyMMdd_HHmmss",Locale.US).format(new Date())+".pdf";
+  private void savePdf(String id,JSONObject data,ArrayList<String> lines,boolean selectDrive){
+    try{
+      currentName=makePdfName(data,id);
+      if(currentName==null){info("Не удалось получить заводской номер или дату поверки из Аршина. PDF не сохранён.");return;}
+      ArrayList<String> all=new ArrayList<>();
+      all.add("Сведения о результатах поверки СИ");
+      all.add("Источник: ФГИС Аршин");
+      all.add("Номер записи: "+id);
+      all.add("https://fgis.gost.ru/fundmetrology/eapi/vri/"+id);
+      all.add("");all.addAll(lines);
+      currentPdf=pdf(all);
+      if(selectDrive){chooseSave();info("Выберите Google Диск и нужную папку.");return;}
       if(folder==null){chooseSave();return;}
-      try{String docId=DocumentsContract.getTreeDocumentId(folder);Uri parent=DocumentsContract.buildDocumentUriUsingTree(folder,docId);
-        Uri dest=DocumentsContract.createDocument(getContentResolver(),parent,"application/pdf",currentName);if(dest==null)throw new IOException("Нет доступа");
-        write(dest);info("PDF сохранён: "+currentName);}
-      catch(Exception e){info("Не удалось сохранить в папку, выберите файл вручную");chooseSave();}
+      try{
+        String docId=DocumentsContract.getTreeDocumentId(folder);
+        Uri parent=DocumentsContract.buildDocumentUriUsingTree(folder,docId);
+        Uri dest=DocumentsContract.createDocument(getContentResolver(),parent,"application/pdf",currentName);
+        if(dest==null)throw new IOException("Нет доступа");
+        write(dest);
+        info("PDF сохранён: "+currentName);
+      }catch(Exception e){info("Папка недоступна. Выберите место сохранения.");chooseSave();}
     }catch(Exception e){info("Ошибка PDF: "+e.getMessage());}
   }
-  private void write(Uri uri)throws Exception{try(OutputStream o=getContentResolver().openOutputStream(uri,"w")){if(o==null)throw new IOException("Нет доступа к файлу");o.write(currentPdf);}getPreferences(0).edit().putString("last",currentName).apply();}
+  private void write(Uri uri)throws Exception{
+    try(OutputStream o=getContentResolver().openOutputStream(uri,"w")){
+      if(o==null)throw new IOException("Нет доступа к файлу");
+      o.write(currentPdf);
+    }
+    getPreferences(0).edit().putString("last",currentName)
+      .putInt("pdf_sequence",getPreferences(0).getInt("pdf_sequence",0)+1).apply();
+  }
   private void chooseSave(){Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/pdf");i.putExtra(Intent.EXTRA_TITLE,currentName);startActivityForResult(i,PICK_SAVE);}
   private byte[] pdf(ArrayList<String> raw)throws Exception{
     final int w=595,h=842,margin=38;Paint p=new Paint(3);p.setTypeface(Typeface.create("sans-serif",0));p.setTextSize(11);p.setColor(0xff222222);
