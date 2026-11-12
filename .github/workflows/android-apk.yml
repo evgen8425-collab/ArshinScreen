@@ -1,4 +1,5 @@
 name: Build Android APK
+# Signed APK release; signing material is supplied only via GitHub Actions secrets.
 on:
   workflow_dispatch:
   push:
