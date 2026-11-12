@@ -9,6 +9,8 @@ import android.net.Uri;
 import android.provider.DocumentsContract;
 import android.view.*;
 import android.widget.*;
+import android.text.*;
+import android.text.InputType;
 import org.json.*;
 import java.io.*;
 import java.net.*;
@@ -44,14 +46,68 @@ public final class MainActivity extends Activity {
   }
   private void info(String s){runOnUiThread(()->{if(message!=null)message.setText(s);});}
   private String pref(String k,String d){return getPreferences(0).getString(k,d);}
-  private String today(){return new SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date());}
-  private void datePicker(EditText e){Calendar c=Calendar.getInstance();try{String[] a=e.getText().toString().split("-");c.set(Integer.parseInt(a[0]),Integer.parseInt(a[1])-1,Integer.parseInt(a[2]));}catch(Exception ignored){}
-    new DatePickerDialog(this,(v,y,m,d)->e.setText(String.format(Locale.US,"%04d-%02d-%02d",y,m+1,d)),c.get(1),c.get(2),c.get(5)).show();}
+  private String today(){return new SimpleDateFormat("dd.MM.yy",Locale.US).format(new Date());}
+  private String showDate(String raw){
+    if(raw.matches("\\d{4}-\\d{2}-\\d{2}"))return raw.substring(8,10)+"."+raw.substring(5,7)+"."+raw.substring(2,4);
+    return raw;
+  }
+  private String isoDate(String displayed){
+    if(!displayed.matches("\\d{2}\\.\\d{2}\\.\\d{2}"))return null;
+    try{
+      SimpleDateFormat fmt=new SimpleDateFormat("dd.MM.yy",Locale.US);
+      fmt.setLenient(false);
+      Date date=fmt.parse(displayed);
+      if(date==null)return null;
+      int yr=Integer.parseInt(displayed.substring(6,8));
+      if(new SimpleDateFormat("yyyy",Locale.US).format(date).equals(""+(2000+yr)))
+        return new SimpleDateFormat("yyyy-MM-dd",Locale.US).format(date);
+    }catch(Exception ignored){}
+    return null;
+  }
+  private void rememberDate(String key,String date){
+    if(isoDate(date)!=null)getPreferences(0).edit().putString(key,date).apply();
+  }
+  private EditText dateInput(String key,String fallback){
+    EditText e=input("ДД.ММ.ГГ",showDate(pref(key,fallback)));
+    e.setInputType(InputType.TYPE_CLASS_NUMBER);
+    e.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(8)});
+    e.setText(showDate(pref(key,fallback)));
+    e.addTextChangedListener(new TextWatcher(){
+      private boolean changing=false;
+      public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+      public void onTextChanged(CharSequence s,int start,int before,int count){}
+      public void afterTextChanged(Editable editable){
+        if(changing)return;
+        changing=true;
+        String digits=editable.toString().replaceAll("[^0-9]","");
+        if(digits.length()>6)digits=digits.substring(0,6);
+        StringBuilder formatted=new StringBuilder();
+        for(int i=0;i<digits.length();i++){
+          if(i==2||i==4)formatted.append('.');
+          formatted.append(digits.charAt(i));
+        }
+        String value=formatted.toString();
+        if(!value.contentEquals(editable)){e.setText(value);e.setSelection(value.length());}
+        rememberDate(key,value);
+        changing=false;
+      }
+    });
+    // Dots are inserted automatically, but the field remains numeric-keyboard friendly.
+    return e;
+  }
   private void searchScreen(){
     page("Аршин Скрин");body.addView(label("Поиск поверки СИ",18));
-    addFieldLabel("Заводской номер");serial=input("Введите заводской номер",pref("serial",""));addFieldLabel("Поверитель (необязательно)");verifier=input("Название организации",pref("verifier",""));
-    addFieldLabel("Дата поверки с");from=input("ГГГГ-ММ-ДД",pref("from","2026-01-01"));from.setShowSoftInputOnFocus(false);from.setOnClickListener(v->datePicker(from));
-    addFieldLabel("Дата поверки по");to=input("ГГГГ-ММ-ДД",pref("to",today()));to.setShowSoftInputOnFocus(false);to.setOnClickListener(v->datePicker(to));
+    addFieldLabel("Заводской номер");serial=input("Введите заводской номер",pref("serial",""));
+    addFieldLabel("Поверитель");verifier=input("Название организации",pref("verifier","МЕТРОКАЛИБР"));
+    verifier.addTextChangedListener(new TextWatcher(){
+      public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+      public void onTextChanged(CharSequence s,int start,int before,int count){
+        getPreferences(0).edit().putString("verifier",s.toString()).apply();
+      }
+      public void afterTextChanged(Editable e){}
+    });
+    addFieldLabel("Дата поверки с");from=dateInput("from","01.01.26");
+    addFieldLabel("Дата поверки по");to=dateInput("to",today());
     button("Найти в Аршине",this::search);
     matches=new LinearLayout(this);matches.setOrientation(1);body.addView(matches);
   }
@@ -67,9 +123,9 @@ public final class MainActivity extends Activity {
   private JSONArray list(JSONObject j){JSONArray a=j.optJSONArray("items");if(a!=null)return a;Object o=j.opt("result");if(o instanceof JSONArray)return (JSONArray)o;if(o instanceof JSONObject){JSONObject r=(JSONObject)o;a=r.optJSONArray("items");if(a!=null)return a;return r.optJSONArray("data");}return j.optJSONArray("data");}
   private String date(String raw){if(raw.matches("\\d{2}\\.\\d{2}\\.\\d{4}.*"))return raw.substring(6,10)+"-"+raw.substring(3,5)+"-"+raw.substring(0,2);return raw.length()>=10?raw.substring(0,10):raw;}
   private void search(){
-    String n=serial.getText().toString().trim(),org=verifier.getText().toString().trim(),a=from.getText().toString(),b=to.getText().toString();
-    if(n.isEmpty()){info("Введите заводской номер");return;}if(!a.matches("\\d{4}-\\d{2}-\\d{2}")||!b.matches("\\d{4}-\\d{2}-\\d{2}")||a.compareTo(b)>0){info("Проверьте диапазон дат");return;}
-    getPreferences(0).edit().putString("serial",n).putString("verifier",org).putString("from",a).putString("to",b).apply();
+    String n=serial.getText().toString().trim(),org=verifier.getText().toString().trim(),a=isoDate(from.getText().toString()),b=isoDate(to.getText().toString());
+    if(n.isEmpty()){info("Введите заводской номер");return;}if(a==null||b==null||a.compareTo(b)>0){info("Проверьте диапазон дат");return;}
+    getPreferences(0).edit().putString("serial",n).putString("verifier",org).putString("from",from.getText().toString()).putString("to",to.getText().toString()).apply();
     matches.removeAllViews();records.clear();info("Ищу поверки...");
     pool.execute(()->{try{boolean truncated=false;
       for(int p=0;p<10;p++){
