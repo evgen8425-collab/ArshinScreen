@@ -40,6 +40,10 @@ public final class MainActivity extends Activity {
   private void page(String title){
     ScrollView scroll=new ScrollView(this);body=new LinearLayout(this);body.setOrientation(1);body.setPadding(dp(16),dp(12),dp(16),dp(28));scroll.addView(body);setContentView(scroll);
     TextView heading=label(title,22);heading.setTextColor(BLUE);heading.setTypeface(null,1);body.addView(heading);
+    TextView version=label("Версия "+BuildConfig.VERSION_NAME,12);
+    version.setTextColor(0xff667789);
+    version.setGravity(Gravity.END);
+    body.addView(version);
     LinearLayout tabs=new LinearLayout(this);body.addView(tabs);
     for(String s:new String[]{"Поиск","Настройки","Файлы"}){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(12);b.setMinHeight(dp(44));b.setPadding(dp(2),0,dp(2),0);tabs.addView(b,new LinearLayout.LayoutParams(0,dp(52),1));b.setOnClickListener(v->{if(s.equals("Поиск"))searchScreen();else if(s.equals("Настройки"))settings();else files();});}
     message=label("",14);body.addView(message);
@@ -180,7 +184,7 @@ public final class MainActivity extends Activity {
       while(at<lines.size()&&y<h-margin){canvas.drawText(lines.get(at++),margin,y,p);y+=16;}canvas.drawText("ФГИС Аршин • "+page,margin,h-20,p);doc.finishPage(pg);page++;
     }while(at<lines.size());ByteArrayOutputStream out=new ByteArrayOutputStream();doc.writeTo(out);doc.close();return out.toByteArray();
   }
-  private void settings(){page("Настройки");body.addView(label("Формат: PDF",17));
+  private void settings(){page("Настройки");body.addView(label("Установленная версия: "+BuildConfig.VERSION_NAME,15));body.addView(label("Формат: PDF",17));
     body.addView(label("Локальная папка: Протоколы поверки СИ",16));body.addView(label(folder==null?"Выберите папку один раз":"Локальная папка подключена",14));
     button("Выбрать папку на смартфоне",()->{Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);startActivityForResult(i,PICK_FOLDER);});
     body.addView(label("Google Диск: при просмотре поверки нажмите «Сохранить PDF на Google Диск» и выберите папку через системное окно. Автоматическая синхронизация ещё не реализована.",15));
