@@ -1,13 +1,44 @@
 plugins { id 'com.android.application' }
+
+def signingFilePath = System.getenv('ARSHIN_KEYSTORE_PATH')
+def signingPassword = System.getenv('ARSHIN_KEYSTORE_PASSWORD')
+def hasSigning = signingFilePath && signingPassword
+
 android {
     namespace 'ru.arshinscreen.app'
     compileSdk 35
+
     defaultConfig {
+        // Never change applicationId: Android relies on it to update an installed app.
         applicationId 'ru.arshinscreen.app'
         minSdk 26
         targetSdk 34
-        versionCode 3
-        versionName '1.0.2'
+        // CI run number increases for each new published build.
+        versionCode 1000 + (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+        versionName '1.0.3'
     }
-    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+
+    signingConfigs {
+        stable {
+            if (hasSigning) {
+                storeFile file(signingFilePath)
+                storePassword signingPassword
+                keyAlias 'arshinscreen'
+                keyPassword signingPassword
+                storeType 'PKCS12'
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (hasSigning) signingConfig signingConfigs.stable
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
