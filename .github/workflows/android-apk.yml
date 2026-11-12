@@ -53,20 +53,19 @@ jobs:
           test -s "$APK"
           APKSIGNER="$(find "${ANDROID_HOME}/build-tools" -name apksigner | sort -V | tail -1)"
           "$APKSIGNER" verify --verbose --print-certs "$APK"
-      - name: Prepare versioned APK and stable download alias
+      - name: Prepare APK named with version
         shell: bash
         run: |
-          VERSION=$(grep -oP "versionName '\\K[^']+" app/build.gradle | head -1)
+          VERSION=$(awk -F"'" '/versionName/{print $2; exit}' app/build.gradle)
           test -n "$VERSION"
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
           cp app/build/outputs/apk/release/app-release.apk "ArshinScreen_v${VERSION}.apk"
-          cp "ArshinScreen_v${VERSION}.apk" ArshinScreen.apk
       - name: Publish signed APK as direct download
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release create "android-build-${{ github.run_number }}" "ArshinScreen_v${APP_VERSION}.apk" ArshinScreen.apk --title "Аршин Скрин — версия ${APP_VERSION}, сборка ${{ github.run_number }}" --notes "Подписанный APK. Последующие выпуски с тем же ключом обновляются поверх установленной версии." --latest
+          gh release create "android-build-${{ github.run_number }}" "ArshinScreen_v${APP_VERSION}.apk" --title "Аршин Скрин — версия ${APP_VERSION}, сборка ${{ github.run_number }}" --notes "Подписанный APK. Последующие выпуски с тем же ключом обновляются поверх установленной версии." --latest
       - name: Upload signed APK artifact
         uses: actions/upload-artifact@v4
         with:
