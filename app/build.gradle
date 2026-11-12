@@ -1,0 +1,13 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'ru.arshinscreen.app'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'ru.arshinscreen.app'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0-dev'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
