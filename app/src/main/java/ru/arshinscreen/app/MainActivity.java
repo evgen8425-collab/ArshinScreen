@@ -193,9 +193,31 @@ public final class MainActivity extends Activity {
   }
   private void recordScreen(String id,JSONObject data){page("Сведения о поверке");body.addView(label("Запись ФИФ: "+id,16));
     ArrayList<String> lines=new ArrayList<>();flatten("",data,lines,0);
+    LinearLayout saveButtons=new LinearLayout(this);
+    saveButtons.setOrientation(LinearLayout.HORIZONTAL);
+    saveButtons.setGravity(Gravity.CENTER_VERTICAL);
+    body.addView(saveButtons,new LinearLayout.LayoutParams(-1,-2));
+    Button saveHere=new Button(this);
+    saveHere.setText("Сохр. сюда");
+    saveHere.setAllCaps(false);
+    saveHere.setTextSize(12);
+    saveHere.setMinHeight(dp(44));
+    saveHere.setPadding(dp(4),0,dp(4),0);
+    LinearLayout.LayoutParams leftParams=new LinearLayout.LayoutParams(0,dp(48),1);
+    leftParams.setMarginEnd(dp(4));
+    saveButtons.addView(saveHere,leftParams);
+    saveHere.setOnClickListener(v->savePdf(id,data,lines,false));
+    Button saveGoogle=new Button(this);
+    saveGoogle.setText("Сохр. Google");
+    saveGoogle.setAllCaps(false);
+    saveGoogle.setTextSize(12);
+    saveGoogle.setMinHeight(dp(44));
+    saveGoogle.setPadding(dp(4),0,dp(4),0);
+    LinearLayout.LayoutParams rightParams=new LinearLayout.LayoutParams(0,dp(48),1);
+    rightParams.setMarginStart(dp(4));
+    saveButtons.addView(saveGoogle,rightParams);
+    saveGoogle.setOnClickListener(v->savePdf(id,data,lines,true));
     for(String s:lines)body.addView(label(s,13));
-    button("Сохранить полный PDF",()->savePdf(id,data,lines,false));
-    button("Сохранить PDF на Google Диск",()->savePdf(id,data,lines,true));
     button("Вернуться к поиску",this::searchScreen);
   }
   private void flatten(String prefix,Object value,ArrayList<String> out,int depth){
