@@ -13,7 +13,7 @@ jobs:
   android:
     runs-on: ubuntu-24.04
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -38,3 +38,10 @@ jobs:
           name: ArshinScreen-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Prepare direct APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk ArshinScreen.apk
+      - name: Publish APK as downloadable GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "android-build-${{ github.run_number }}" ArshinScreen.apk --title "Аршин Скрин — сборка ${{ github.run_number }}" --notes "Тестовая версия Android. Прямое скачивание APK без ZIP." --latest
