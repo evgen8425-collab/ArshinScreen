@@ -33,7 +33,7 @@ public final class MainActivity extends Activity {
   private static final int BLUE=0xff15385a;
   private int dp(float n){return (int)(n*getResources().getDisplayMetrics().density+0.5f);}
   private void addFieldLabel(String s){TextView t=label(s,14);t.setTextColor(BLUE);body.addView(t);}
-  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(0xfff7f9fc);getWindow().setNavigationBarColor(0xfff7f9fc);getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);String u=getPreferences(0).getString("folder",null);if(u!=null)folder=Uri.parse(u);searchScreen();}
+  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(0xfff7f9fc);getWindow().setNavigationBarColor(0xfff7f9fc);getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);String u=getPreferences(0).getString("folder",null);if(u!=null)folder=Uri.parse(u);methodScreen();}
   private TextView label(String value,int sp){TextView t=new TextView(this);t.setText(value);t.setTextSize(sp);t.setPadding(8,12,8,12);return t;}
   private void button(String s,Runnable action){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(15);b.setMinHeight(dp(48));body.addView(b,new LinearLayout.LayoutParams(-1,-2));b.setOnClickListener(v->action.run());}
   private EditText input(String hint,String value){EditText e=new EditText(this);e.setSingleLine(true);e.setTextSize(16);e.setHint(hint);e.setText(value);e.setSelectAllOnFocus(false);body.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));return e;}
@@ -45,7 +45,7 @@ public final class MainActivity extends Activity {
     version.setGravity(Gravity.END);
     body.addView(version);
     LinearLayout tabs=new LinearLayout(this);body.addView(tabs);
-    for(String s:new String[]{"Поиск","Настройки","Файлы"}){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(12);b.setMinHeight(dp(44));b.setPadding(dp(2),0,dp(2),0);tabs.addView(b,new LinearLayout.LayoutParams(0,dp(52),1));b.setOnClickListener(v->{if(s.equals("Поиск"))searchScreen();else if(s.equals("Настройки"))settings();else files();});}
+    for(String s:new String[]{"Методики","Поиск","Настройки","Файлы"}){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(11);b.setMinHeight(dp(44));b.setPadding(dp(1),0,dp(1),0);tabs.addView(b,new LinearLayout.LayoutParams(0,dp(52),1));b.setOnClickListener(v->{if(s.equals("Методики"))methodScreen();else if(s.equals("Поиск"))searchScreen();else if(s.equals("Настройки"))settings();else files();});}
     message=label("",14);body.addView(message);
   }
   private void info(String s){runOnUiThread(()->{if(message!=null)message.setText(s);});}
@@ -99,8 +99,61 @@ public final class MainActivity extends Activity {
     // Dots are inserted automatically, but the field remains numeric-keyboard friendly.
     return e;
   }
+  private JSONArray catalog(){
+    try(InputStream stream=getAssets().open("si_catalog.json")){
+      ByteArrayOutputStream b=new ByteArrayOutputStream();byte[] buf=new byte[4096];int n;
+      while((n=stream.read(buf))!=-1)b.write(buf,0,n);
+      return new JSONArray(b.toString("UTF-8"));
+    }catch(Exception e){info("Не удалось открыть справочник СИ: "+e.getMessage());return new JSONArray();}
+  }
+  private void methodScreen(){
+    page("Методики СИ");
+    body.addView(label("Приборы из Google Диска / АршинСкрин / Сведения си",14));
+    JSONArray all=catalog();
+    java.util.TreeMap<String,ArrayList<JSONObject>> groups=new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    for(int i=0;i<all.length();i++){
+      JSONObject item=all.optJSONObject(i);if(item==null)continue;
+      String method=item.optString("method","Без методики");
+      if(!groups.containsKey(method))groups.put(method,new ArrayList<>());
+      groups.get(method).add(item);
+    }
+    body.addView(label("Методик: "+groups.size()+" • СИ: "+all.length(),16));
+    body.addView(label("Справочник загружен из документов, доступных при выпуске приложения. Новые файлы на Диске потребуют обновления данных.",12));
+    for(java.util.Map.Entry<String,ArrayList<JSONObject>> group:groups.entrySet()){
+      String method=group.getKey();ArrayList<JSONObject> devices=group.getValue();
+      Button b=new Button(this);b.setAllCaps(false);b.setTextSize(14);
+      b.setText(method+"\nСИ: "+devices.size());body.addView(b);
+      b.setOnClickListener(v->methodDevices(method,devices));
+    }
+  }
+  private void methodDevices(String method,ArrayList<JSONObject> devices){
+    page("Методика поверки");
+    body.addView(label(method,18));
+    body.addView(label("Средства измерений: "+devices.size(),14));
+    for(JSONObject item:devices){
+      String name=item.optString("name");
+      String model=item.optString("model");
+      String serialNo=item.optString("serial");
+      String registry=item.optString("registry");
+      String date=item.optString("date");
+      Button b=new Button(this);b.setTextSize(13);b.setAllCaps(false);
+      b.setText(name+"\n"+model+" • зав. № "+serialNo+"\nГосреестр: "+registry+" • "+date);
+      body.addView(b);
+      b.setOnClickListener(v->{
+        page("Сведения о СИ");
+        body.addView(label(name,18));
+        body.addView(label("Методика: "+method+"\nМодификация: "+model+"\nЗаводской №: "+serialNo+"\nГосреестр: "+registry+"\nДата поверки: "+date,15));
+        button("Открыть сведения на Google Диске",()->{
+          Intent in=new Intent(Intent.ACTION_VIEW,Uri.parse(item.optString("url")));
+          startActivity(in);
+        });
+        button("К списку методик",this::methodScreen);
+      });
+    }
+    button("К списку методик",this::methodScreen);
+  }
   private void searchScreen(){
-    page("Аршин Скрин");body.addView(label("Поиск поверки СИ",18));
+    page("Методики СИ");body.addView(label("Поиск поверки СИ",18));
     addFieldLabel("Заводской номер");serial=input("Введите заводской номер",pref("serial",""));
     addFieldLabel("Поверитель");verifier=input("Название организации",pref("verifier","МЕТРОКАЛИБР"));
     verifier.addTextChangedListener(new TextWatcher(){
