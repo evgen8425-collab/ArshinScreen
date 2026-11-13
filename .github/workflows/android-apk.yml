@@ -59,16 +59,16 @@ jobs:
           VERSION=$(awk -F"'" '/versionName/{print $2; exit}' app/build.gradle)
           test -n "$VERSION"
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
-          cp app/build/outputs/apk/release/app-release.apk "ArshinScreen_v${VERSION}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "MetodikiSI_v${VERSION}.apk"
       - name: Publish signed APK as direct download
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release create "android-build-${{ github.run_number }}" "ArshinScreen_v${APP_VERSION}.apk" --title "Аршин Скрин — версия ${APP_VERSION}, сборка ${{ github.run_number }}" --notes "Подписанный APK. Последующие выпуски с тем же ключом обновляются поверх установленной версии." --latest
+          gh release create "android-build-${{ github.run_number }}" "MetodikiSI_v${APP_VERSION}.apk" --title "Методики СИ — версия ${APP_VERSION}, сборка ${{ github.run_number }}" --notes "Подписанный APK. Последующие выпуски с тем же ключом обновляются поверх установленной версии." --latest
       - name: Upload signed APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ArshinScreen-versioned-apk
-          path: ArshinScreen_v*.apk
+          name: MetodikiSI-versioned-apk
+          path: MetodikiSI_v*.apk
           if-no-files-found: error
