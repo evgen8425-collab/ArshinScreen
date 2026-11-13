@@ -1,0 +1,92 @@
+[
+  {
+    "method": "МП АПМ 92-21",
+    "name": "Ключи моментные предельные",
+    "model": "34223-1A",
+    "serial": "20102319682",
+    "registry": "86825-22",
+    "date": "11.11.2026",
+    "url": "https://drive.google.com/file/d/1JedhilbaT0ZgG69di1iI01sYj4T_G4S6/view"
+  },
+  {
+    "method": "МП 52612-13",
+    "name": "Индикаторы часового типа с ценой деления 0,01 мм",
+    "model": "ИЧ 10",
+    "serial": "F19871E",
+    "registry": "52612-13",
+    "date": "23.10.2026",
+    "url": "https://drive.google.com/file/d/1uGpULhXZL-kzFwG4R3LD3ttp4KQKi2bY/view"
+  },
+  {
+    "method": "МП 52631-13",
+    "name": "Микрометры гладкие нониусные и цифровые",
+    "model": "МК-50",
+    "serial": "101610",
+    "registry": "52631-13",
+    "date": "23.10.2026",
+    "url": "https://drive.google.com/file/d/1n8XFz2sfnVcFe7gDVvTq1e4wEuCWNEj5/view"
+  },
+  {
+    "method": "МИ 2593-2000",
+    "name": "Ключи моментные предельные",
+    "model": "4934",
+    "serial": "VJ16801",
+    "registry": "72246-18",
+    "date": "23.10.2026",
+    "url": "https://drive.google.com/file/d/1rupbgYl7dPCcmegymU7Zf9t71Ugunsa1/view"
+  },
+  {
+    "method": "МП 203-6-2019",
+    "name": "Линейки измерительные металлические торговой марки «Калиброн»",
+    "model": "исполнение II",
+    "serial": "230700168",
+    "registry": "74468-19",
+    "date": "06.11.2026",
+    "url": "https://drive.google.com/file/d/1BST5xZrb-YtRXO5ooXnsxeY2eO0ZS6ov/view"
+  },
+  {
+    "method": "МП раздела 5.3 Руководства по эксплуатации ХА 495.000.00 РЭ",
+    "name": "Приборы для измерения суммарного люфта в рулевом управлении автотранспортных средств",
+    "model": "Вираж",
+    "serial": "158",
+    "registry": "27204-04",
+    "date": "05.11.2026",
+    "url": "https://drive.google.com/file/d/1FOeRKCWj8Ryw_qC7h1NzgKi7Og35HvFT/view"
+  },
+  {
+    "method": "МП 51478-12",
+    "name": "Штангенциркули",
+    "model": "ШЦ-I",
+    "serial": "21071164",
+    "registry": "51478-12",
+    "date": "05.11.2026",
+    "url": "https://drive.google.com/file/d/1cXI_WXGIwRvW9ZQADOnLmMtjJ83bL6kp/view"
+  },
+  {
+    "method": "МП ТИнТ 43-2012",
+    "name": "Преобразователи измерительные угла поворота",
+    "model": "ИСЛ-М",
+    "serial": "17635",
+    "registry": "51384-12",
+    "date": "05.11.2026",
+    "url": "https://drive.google.com/file/d/1ZLJPpC7u_cW4RRJy5Hzyk9VAWWhqurha/view"
+  },
+  {
+    "method": "МП АПМ 43-13",
+    "name": "Стенды тормозные силовые",
+    "model": "СТС-13У-СП",
+    "serial": "551",
+    "registry": "56636-14",
+    "date": "05.11.2026",
+    "url": "https://drive.google.com/file/d/1ELDfdvTqoKbefq_YXn6moWpuEbXVg0--/view"
+  },
+  {
+    "method": "МИ 2024-89",
+    "name": "Линейки измерительные металлические",
+    "model": "—",
+    "serial": "21402964",
+    "registry": "20048-05",
+    "date": "05.11.2026",
+    "url": "https://drive.google.com/file/d/1AZxtym-vCf5zAaXCuqWE9o_w0qKQExn3/view"
+  }
+]
