@@ -34,7 +34,10 @@ public final class SiFolderSync {
     Uri children=DocumentsContract.buildChildDocumentsUriUsingTree(tree,treeId);
     JSONArray catalog=cached();
     HashSet<String> known=new HashSet<>();
-    for(int i=0;i<catalog.length();i++) {JSONObject item=catalog.optJSONObject(i);if(item!=null)known.add(item.optString("source_uri"));}
+    for(int i=0;i<catalog.length();i++) {
+      JSONObject item=catalog.optJSONObject(i);
+      if(item!=null&&item.optJSONArray("means")!=null)known.add(item.optString("source_uri"));
+    }
     int added=0;
     String[] cols={DocumentsContract.Document.COLUMN_DOCUMENT_ID,DocumentsContract.Document.COLUMN_DISPLAY_NAME,DocumentsContract.Document.COLUMN_MIME_TYPE};
     try(Cursor cursor=resolver.query(children,cols,null,null,null)){
@@ -53,8 +56,13 @@ public final class SiFolderSync {
             if(item==null)continue;
             item.put("source_uri",uri);
             item.put("file",filename);
-            catalog.put(item);
-            known.add(uri);added++;
+            int existing=-1;
+            for(int i=0;i<catalog.length();i++){
+              JSONObject previous=catalog.optJSONObject(i);
+              if(previous!=null&&uri.equals(previous.optString("source_uri"))){existing=i;break;}
+            }
+            if(existing>=0)catalog.put(existing,item);else {catalog.put(item);added++;}
+            known.add(uri);
           }
         }catch(Exception ignored){ /* A malformed PDF must not prevent other imports. */ }
       }
@@ -68,6 +76,29 @@ public final class SiFolderSync {
     if(!m.find())return "";
     return m.group(1).replaceAll("\\s+"," ").trim();
   }
+  /** Read only the means section, preserving one record per mieta/mis entry. */
+  private static JSONArray extractMeans(String text)throws Exception {
+    java.util.LinkedHashMap<String,JSONObject> all=new java.util.LinkedHashMap<>();
+    Pattern row=Pattern.compile("Результат \\(result\\) / Средства поверки \\(means\\) / (mieta|mis) \\[(\\d+)\\] / ([^:\\r\\n]+):\\s*(.*?)(?=\\RРезультат \\(result\\)|\\RАршин ·|$)",Pattern.DOTALL);
+    Matcher matches=row.matcher(text);
+    while(matches.find()){
+      String type=matches.group(1), idx=matches.group(2),field=matches.group(3).trim();
+      String value=matches.group(4).replaceAll("\\s+"," ").trim();
+      String key=type+":"+idx;
+      JSONObject means=all.get(key);
+      if(means==null){means=new JSONObject();means.put("kind",type);all.put(key,means);}
+      if(field.equals("Наименование типаСИ (mitypeTitle)"))means.put("name",value);
+      else if(field.equals("Госреестр (mitypeNumber)"))means.put("registry",value);
+      else if(field.equals("Заводской номер (manufactureNum)")||field.equals("Номер (number)"))means.put("serial",value);
+      else if(field.equals("Модификация (modification)"))means.put("model",value);
+      else if(field.equals("regNumber"))means.put("etalonNumber",value);
+    }
+    JSONArray result=new JSONArray();
+    for(JSONObject item:all.values()){
+      if(!item.optString("name").isEmpty()||!item.optString("etalonNumber").isEmpty())result.put(item);
+    }
+    return result;
+  }
   private static JSONObject parse(String text)throws Exception {
     String method=capture(text,"Методика поверки (docTitle)");
     String serial=capture(text,"Заводской номер (manufactureNum)");
@@ -79,6 +110,7 @@ public final class SiFolderSync {
     item.put("model",capture(text,"Модификация (modification)"));
     item.put("registry",capture(text,"Госреестр (mitypeNumber)"));
     item.put("date",capture(text,"Дата поверки (vrfDate)"));
+    item.put("means",extractMeans(text));
     Matcher link=Pattern.compile("https://fgis\\.gost\\.ru/fundmetrology/cm/results/[^\\s]+").matcher(text);
     item.put("url",link.find()?link.group():"");
     return item;
