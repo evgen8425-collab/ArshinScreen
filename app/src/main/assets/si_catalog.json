@@ -6,7 +6,33 @@
     "serial": "20102319682",
     "registry": "86825-22",
     "date": "11.11.2026",
-    "url": "https://drive.google.com/file/d/1JedhilbaT0ZgG69di1iI01sYj4T_G4S6/view"
+    "url": "https://drive.google.com/file/d/1JedhilbaT0ZgG69di1iI01sYj4T_G4S6/view",
+    "means": [
+      {
+        "kind": "mieta",
+        "name": "Измерители крутящего момента силы",
+        "registry": "",
+        "serial": "3411100038",
+        "model": "мод. NETT-5",
+        "etalonNumber": "88509.23.2Р.01280183"
+      },
+      {
+        "kind": "mieta",
+        "name": "Измерители крутящего момента силы",
+        "registry": "",
+        "serial": "3411200061",
+        "model": "мод. NETT-50",
+        "etalonNumber": "88509.23.2Р.01280184"
+      },
+      {
+        "kind": "mis",
+        "name": "Измерители влажности и температуры",
+        "registry": "",
+        "serial": "69734",
+        "model": "",
+        "etalonNumber": ""
+      }
+    ]
   },
   {
     "method": "МП 52612-13",
@@ -15,7 +41,25 @@
     "serial": "F19871E",
     "registry": "52612-13",
     "date": "23.10.2026",
-    "url": "https://drive.google.com/file/d/1uGpULhXZL-kzFwG4R3LD3ttp4KQKi2bY/view"
+    "url": "https://drive.google.com/file/d/1uGpULhXZL-kzFwG4R3LD3ttp4KQKi2bY/view",
+    "means": [
+      {
+        "kind": "mieta",
+        "name": "Меры длины концевые плоскопараллельные",
+        "registry": "",
+        "serial": "141755",
+        "model": "набор № 1",
+        "etalonNumber": "62321.15.3Р.01454002"
+      },
+      {
+        "kind": "mis",
+        "name": "Измерители влажности и температуры",
+        "registry": "",
+        "serial": "69734",
+        "model": "",
+        "etalonNumber": ""
+      }
+    ]
   },
   {
     "method": "МП 52631-13",
@@ -24,7 +68,41 @@
     "serial": "101610",
     "registry": "52631-13",
     "date": "23.10.2026",
-    "url": "https://drive.google.com/file/d/1n8XFz2sfnVcFe7gDVvTq1e4wEuCWNEj5/view"
+    "url": "https://drive.google.com/file/d/1n8XFz2sfnVcFe7gDVvTq1e4wEuCWNEj5/view",
+    "means": [
+      {
+        "kind": "mieta",
+        "name": "Меры длины концевые плоскопараллельные",
+        "registry": "",
+        "serial": "141755",
+        "model": "набор № 1",
+        "etalonNumber": "62321.15.3Р.01454002"
+      },
+      {
+        "kind": "mis",
+        "name": "Оптиметры горизонтальные",
+        "registry": "",
+        "serial": "740325",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Пластины плоские стеклянные 1-го 2-го класса",
+        "registry": "",
+        "serial": "5724",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Измерители влажности и температуры",
+        "registry": "",
+        "serial": "69734",
+        "model": "",
+        "etalonNumber": ""
+      }
+    ]
   },
   {
     "method": "МИ 2593-2000",
@@ -33,7 +111,33 @@
     "serial": "VJ16801",
     "registry": "72246-18",
     "date": "23.10.2026",
-    "url": "https://drive.google.com/file/d/1rupbgYl7dPCcmegymU7Zf9t71Ugunsa1/view"
+    "url": "https://drive.google.com/file/d/1rupbgYl7dPCcmegymU7Zf9t71Ugunsa1/view",
+    "means": [
+      {
+        "kind": "mieta",
+        "name": "Измерители крутящего момента силы",
+        "registry": "",
+        "serial": "3311300054",
+        "model": "мод. NETT-220",
+        "etalonNumber": "88509.23.2Р.01280180"
+      },
+      {
+        "kind": "mieta",
+        "name": "Измерители крутящего момента силы",
+        "registry": "",
+        "serial": "3411200061",
+        "model": "мод. NETT-50",
+        "etalonNumber": "88509.23.2Р.01280184"
+      },
+      {
+        "kind": "mis",
+        "name": "Измерители влажности и температуры",
+        "registry": "",
+        "serial": "69734",
+        "model": "",
+        "etalonNumber": ""
+      }
+    ]
   },
   {
     "method": "МП 203-6-2019",
@@ -42,7 +146,73 @@
     "serial": "230700168",
     "registry": "74468-19",
     "date": "06.11.2026",
-    "url": "https://drive.google.com/file/d/1BST5xZrb-YtRXO5ooXnsxeY2eO0ZS6ov/view"
+    "url": "https://drive.google.com/file/d/1BST5xZrb-YtRXO5ooXnsxeY2eO0ZS6ov/view",
+    "means": [
+      {
+        "kind": "mieta",
+        "name": "Линейки контрольные рабочие",
+        "registry": "",
+        "serial": "0571",
+        "model": "КЛ",
+        "etalonNumber": "1514.61.4Р.00820368"
+      },
+      {
+        "kind": "mieta",
+        "name": "Штангенциркули с отсчетом по нониусу",
+        "registry": "",
+        "serial": "048002196",
+        "model": "ШЦ-II-250-0,05",
+        "etalonNumber": "33746.07.РЭ.01495069"
+      },
+      {
+        "kind": "mieta",
+        "name": "Линейки поверочные 1-го и 2-го классов точности",
+        "registry": "",
+        "serial": "78565",
+        "model": "Линейка поверочная ШМ-1600",
+        "etalonNumber": "3618.73.3Р.01504064"
+      },
+      {
+        "kind": "mis",
+        "name": "Образцы шероховатости поверхности сравнения",
+        "registry": "",
+        "serial": "891031",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Угломеры",
+        "registry": "",
+        "serial": "72534",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Плиты поверочные и разметочные",
+        "registry": "",
+        "serial": "192",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Щупы",
+        "registry": "",
+        "serial": "2105101586",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Измерители влажности и температуры",
+        "registry": "",
+        "serial": "69734",
+        "model": "",
+        "etalonNumber": ""
+      }
+    ]
   },
   {
     "method": "МП раздела 5.3 Руководства по эксплуатации ХА 495.000.00 РЭ",
@@ -51,7 +221,25 @@
     "serial": "158",
     "registry": "27204-04",
     "date": "05.11.2026",
-    "url": "https://drive.google.com/file/d/1FOeRKCWj8Ryw_qC7h1NzgKi7Og35HvFT/view"
+    "url": "https://drive.google.com/file/d/1FOeRKCWj8Ryw_qC7h1NzgKi7Og35HvFT/view",
+    "means": [
+      {
+        "kind": "mieta",
+        "name": "Установки поверочные",
+        "registry": "",
+        "serial": "08.20.22",
+        "model": "УПЛ-М",
+        "etalonNumber": "57949.14.5Р.01517993"
+      },
+      {
+        "kind": "mis",
+        "name": "Измерители влажности и температуры",
+        "registry": "",
+        "serial": "69734",
+        "model": "",
+        "etalonNumber": ""
+      }
+    ]
   },
   {
     "method": "МП 51478-12",
@@ -60,7 +248,65 @@
     "serial": "21071164",
     "registry": "51478-12",
     "date": "05.11.2026",
-    "url": "https://drive.google.com/file/d/1cXI_WXGIwRvW9ZQADOnLmMtjJ83bL6kp/view"
+    "url": "https://drive.google.com/file/d/1cXI_WXGIwRvW9ZQADOnLmMtjJ83bL6kp/view",
+    "means": [
+      {
+        "kind": "mieta",
+        "name": "Меры длины концевые плоскопараллельные",
+        "registry": "",
+        "serial": "141755",
+        "model": "набор № 1",
+        "etalonNumber": "62321.15.3Р.01454002"
+      },
+      {
+        "kind": "mieta",
+        "name": "Меры длины концевые плоскопараллельные",
+        "registry": "",
+        "serial": "А1090",
+        "model": "Набор 9",
+        "etalonNumber": "9291.91.4Р.01464376"
+      },
+      {
+        "kind": "mis",
+        "name": "Пластины плоские стеклянные 1-го 2-го класса",
+        "registry": "",
+        "serial": "5724",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Микроскопы большие инструментальные",
+        "registry": "",
+        "serial": "4328",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Линейки лекальные",
+        "registry": "",
+        "serial": "413",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Измерители влажности и температуры",
+        "registry": "",
+        "serial": "69734",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Микрометры гладкие торговой марки «SHAN»",
+        "registry": "",
+        "serial": "122561",
+        "model": "",
+        "etalonNumber": ""
+      }
+    ]
   },
   {
     "method": "МП ТИнТ 43-2012",
@@ -69,7 +315,25 @@
     "serial": "17635",
     "registry": "51384-12",
     "date": "05.11.2026",
-    "url": "https://drive.google.com/file/d/1ZLJPpC7u_cW4RRJy5Hzyk9VAWWhqurha/view"
+    "url": "https://drive.google.com/file/d/1ZLJPpC7u_cW4RRJy5Hzyk9VAWWhqurha/view",
+    "means": [
+      {
+        "kind": "mieta",
+        "name": "Установки поверочные",
+        "registry": "",
+        "serial": "08.20.22",
+        "model": "УПЛ-М",
+        "etalonNumber": "57949.14.5Р.01517993"
+      },
+      {
+        "kind": "mis",
+        "name": "Измерители влажности и температуры",
+        "registry": "",
+        "serial": "69734",
+        "model": "",
+        "etalonNumber": ""
+      }
+    ]
   },
   {
     "method": "МП АПМ 43-13",
@@ -78,7 +342,81 @@
     "serial": "551",
     "registry": "56636-14",
     "date": "05.11.2026",
-    "url": "https://drive.google.com/file/d/1ELDfdvTqoKbefq_YXn6moWpuEbXVg0--/view"
+    "url": "https://drive.google.com/file/d/1ELDfdvTqoKbefq_YXn6moWpuEbXVg0--/view",
+    "means": [
+      {
+        "kind": "mieta",
+        "name": "Динамометры электронные переносные",
+        "registry": "",
+        "serial": "12708",
+        "model": "модификация АЦДМ/1У-50/1И-0,5",
+        "etalonNumber": "87777.22.2Р.01481747"
+      },
+      {
+        "kind": "mieta",
+        "name": "Динамометры электронные переносные",
+        "registry": "",
+        "serial": "12707",
+        "model": "модификация",
+        "etalonNumber": "87777.22.2Р.01481748"
+      },
+      {
+        "kind": "mieta",
+        "name": "Динамометры электронные переносные",
+        "registry": "",
+        "serial": "12706",
+        "model": "модификация АЦДМ/1У-1/1И-0,5",
+        "etalonNumber": "87777.22.2Р.01481749"
+      },
+      {
+        "kind": "mieta",
+        "name": "Динамометры электронные переносные",
+        "registry": "",
+        "serial": "12705",
+        "model": "модификация АЦДМ/1У-0,1/1И-0,5",
+        "etalonNumber": "87777.22.2Р.01481750"
+      },
+      {
+        "kind": "mieta",
+        "name": "Динамометры электронные переносные",
+        "registry": "",
+        "serial": "12704",
+        "model": "модификация АЦДМ/1У-0,01/2И-0,5",
+        "etalonNumber": "87777.22.2Р.01481751"
+      },
+      {
+        "kind": "mieta",
+        "name": "Динамометры электронные переносные",
+        "registry": "",
+        "serial": "12703",
+        "model": "АЦДМ/1Р-500/6И-0,5",
+        "etalonNumber": "87777.22.2Р.01486137"
+      },
+      {
+        "kind": "mis",
+        "name": "Рулетки измерительные",
+        "registry": "",
+        "serial": "1475-2007",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Манометры показывающие",
+        "registry": "",
+        "serial": "02067",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Измерители влажности и температуры",
+        "registry": "",
+        "serial": "69734",
+        "model": "",
+        "etalonNumber": ""
+      }
+    ]
   },
   {
     "method": "МИ 2024-89",
@@ -87,6 +425,56 @@
     "serial": "21402964",
     "registry": "20048-05",
     "date": "05.11.2026",
-    "url": "https://drive.google.com/file/d/1AZxtym-vCf5zAaXCuqWE9o_w0qKQExn3/view"
+    "url": "https://drive.google.com/file/d/1AZxtym-vCf5zAaXCuqWE9o_w0qKQExn3/view",
+    "means": [
+      {
+        "kind": "mieta",
+        "name": "Линейки контрольные рабочие",
+        "registry": "",
+        "serial": "0571",
+        "model": "КЛ",
+        "etalonNumber": "1514.61.4Р.00820368"
+      },
+      {
+        "kind": "mieta",
+        "name": "Линейки поверочные 1-го и 2-го классов точности",
+        "registry": "",
+        "serial": "78565",
+        "model": "Линейка поверочная",
+        "etalonNumber": "3618.73.3Р.01504064"
+      },
+      {
+        "kind": "mis",
+        "name": "Угломеры",
+        "registry": "",
+        "serial": "72534",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Плиты поверочные и разметочные",
+        "registry": "",
+        "serial": "192",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Щупы",
+        "registry": "",
+        "serial": "2105101586",
+        "model": "",
+        "etalonNumber": ""
+      },
+      {
+        "kind": "mis",
+        "name": "Измерители влажности и температуры",
+        "registry": "",
+        "serial": "69734",
+        "model": "",
+        "etalonNumber": ""
+      }
+    ]
   }
 ]
