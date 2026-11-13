@@ -151,13 +151,46 @@ public final class MainActivity extends Activity {
     for(java.util.Map.Entry<String,ArrayList<JSONObject>> group:groups.entrySet()){
       String method=group.getKey();ArrayList<JSONObject> devices=group.getValue();
       Button b=new Button(this);b.setAllCaps(false);b.setTextSize(14);
-      b.setText(method+"\nСИ: "+devices.size());body.addView(b);
+      b.setText(method+"\nСИ: "+devices.size()+" · Эталоны: "+methodMeans(devices,"mieta").length());body.addView(b);
       b.setOnClickListener(v->methodDevices(method,devices));
+    }
+  }
+  private JSONArray methodMeans(ArrayList<JSONObject> devices,String kind){
+    JSONArray unique=new JSONArray();
+    HashSet<String> keys=new HashSet<>();
+    for(JSONObject device:devices){
+      JSONArray items=device.optJSONArray("means");
+      if(items==null)continue;
+      for(int i=0;i<items.length();i++){
+        JSONObject item=items.optJSONObject(i);
+        if(item==null||!kind.equals(item.optString("kind")))continue;
+        String key=item.optString("etalonNumber")+"|"+item.optString("serial")+"|"+item.optString("name")+"|"+item.optString("model");
+        if(keys.add(key))unique.put(item);
+      }
+    }
+    return unique;
+  }
+  private void displayMeans(JSONArray items){
+    for(int i=0;i<items.length();i++){
+      JSONObject x=items.optJSONObject(i);if(x==null)continue;
+      StringBuilder text=new StringBuilder(x.optString("name","Без наименования"));
+      String model=x.optString("model");if(!model.isEmpty())text.append(" — ").append(model);
+      String number=x.optString("serial");if(!number.isEmpty())text.append("\nЗав. № ").append(number);
+      String reg=x.optString("registry");if(!reg.isEmpty())text.append(" · Госреестр ").append(reg);
+      String et=x.optString("etalonNumber");if(!et.isEmpty())text.append("\nРег. № эталона: ").append(et);
+      body.addView(label(text.toString(),14));
     }
   }
   private void methodDevices(String method,ArrayList<JSONObject> devices){
     page("Методика поверки");
     body.addView(label(method,18));
+    JSONArray standards=methodMeans(devices,"mieta");
+    JSONArray auxiliaries=methodMeans(devices,"mis");
+    body.addView(label("Эталоны по методике ("+standards.length()+")",17));
+    if(standards.length()==0)body.addView(label("В загруженных сведениях эталоны не указаны.",13));
+    else displayMeans(standards);
+    body.addView(label("Дополнительные средства поверки ("+auxiliaries.length()+")",16));
+    if(auxiliaries.length()>0)displayMeans(auxiliaries);
     body.addView(label("Средства измерений: "+devices.size(),14));
     for(JSONObject item:devices){
       String name=item.optString("name");
