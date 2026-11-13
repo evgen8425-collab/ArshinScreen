@@ -21,7 +21,7 @@ import java.util.concurrent.*;
 
 public final class MainActivity extends Activity {
   private static final String API="https://fgis.gost.ru/fundmetrology/eapi/vri";
-  private static final int PICK_FOLDER=1, PICK_SAVE=2;
+  private static final int PICK_FOLDER=1, PICK_SAVE=2, PICK_SI_FOLDER=3;
   private final ExecutorService pool=Executors.newSingleThreadExecutor();
   private LinearLayout body, matches;
   private TextView message;
@@ -33,7 +33,7 @@ public final class MainActivity extends Activity {
   private static final int BLUE=0xff15385a;
   private int dp(float n){return (int)(n*getResources().getDisplayMetrics().density+0.5f);}
   private void addFieldLabel(String s){TextView t=label(s,14);t.setTextColor(BLUE);body.addView(t);}
-  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(0xfff7f9fc);getWindow().setNavigationBarColor(0xfff7f9fc);getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);String u=getPreferences(0).getString("folder",null);if(u!=null)folder=Uri.parse(u);methodScreen();}
+  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(0xfff7f9fc);getWindow().setNavigationBarColor(0xfff7f9fc);getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);String u=getPreferences(0).getString("folder",null);if(u!=null)folder=Uri.parse(u);methodScreen();if(!pref("si_import_tree","").isEmpty())syncSiFolder(false);}
   private TextView label(String value,int sp){TextView t=new TextView(this);t.setText(value);t.setTextSize(sp);t.setPadding(8,12,8,12);return t;}
   private void button(String s,Runnable action){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(15);b.setMinHeight(dp(48));body.addView(b,new LinearLayout.LayoutParams(-1,-2));b.setOnClickListener(v->action.run());}
   private EditText input(String hint,String value){EditText e=new EditText(this);e.setSingleLine(true);e.setTextSize(16);e.setHint(hint);e.setText(value);e.setSelectAllOnFocus(false);body.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));return e;}
@@ -100,11 +100,38 @@ public final class MainActivity extends Activity {
     return e;
   }
   private JSONArray catalog(){
+    JSONArray result=new JSONArray();
+    HashSet<String> known=new HashSet<>();
     try(InputStream stream=getAssets().open("si_catalog.json")){
       ByteArrayOutputStream b=new ByteArrayOutputStream();byte[] buf=new byte[4096];int n;
       while((n=stream.read(buf))!=-1)b.write(buf,0,n);
-      return new JSONArray(b.toString("UTF-8"));
-    }catch(Exception e){info("Не удалось открыть справочник СИ: "+e.getMessage());return new JSONArray();}
+      JSONArray initial=new JSONArray(b.toString("UTF-8"));
+      for(int i=0;i<initial.length();i++)appendUnique(result,known,initial.optJSONObject(i));
+    }catch(Exception ignored){}
+    JSONArray saved=new SiFolderSync(this).cached();
+    for(int i=0;i<saved.length();i++)appendUnique(result,known,saved.optJSONObject(i));
+    return result;
+  }
+  private void appendUnique(JSONArray result,HashSet<String> known,JSONObject item){
+    if(item==null)return;
+    String key=item.optString("method").trim().toLowerCase(Locale.ROOT)+"|"+item.optString("serial").trim().toLowerCase(Locale.ROOT);
+    if(known.add(key))result.put(item);
+  }
+  private void pickSiFolder(){
+    Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+    startActivityForResult(intent,PICK_SI_FOLDER);
+  }
+  private void syncSiFolder(boolean showStatus){
+    String saved=pref("si_import_tree","");
+    if(saved.isEmpty()){if(showStatus)info("Сначала выберите папку со сведениями СИ");return;}
+    if(showStatus)info("Проверяю папку и добавляю новые СИ...");
+    pool.execute(()->{
+      try{
+        int added=new SiFolderSync(this).sync(Uri.parse(saved));
+        runOnUiThread(()->{methodScreen();info("Обновление завершено. Добавлено СИ: "+added);});
+      }catch(Exception e){info("Не удалось обновить сведения СИ: "+e.getMessage());}
+    });
   }
   private void methodScreen(){
     page("Методики СИ");
@@ -118,7 +145,9 @@ public final class MainActivity extends Activity {
       groups.get(method).add(item);
     }
     body.addView(label("Методик: "+groups.size()+" • СИ: "+all.length(),16));
-    body.addView(label("Справочник загружен из документов, доступных при выпуске приложения. Новые файлы на Диске потребуют обновления данных.",12));
+    body.addView(label(pref("si_import_tree","").isEmpty()?"Для автоматического пополнения выберите папку «Сведения си».":"Папка подключена. Новые PDF проверяются при запуске приложения.",12));
+    button("Выбрать папку «Сведения си»",this::pickSiFolder);
+    button("Обновить список приборов",()->syncSiFolder(true));
     for(java.util.Map.Entry<String,ArrayList<JSONObject>> group:groups.entrySet()){
       String method=group.getKey();ArrayList<JSONObject> devices=group.getValue();
       Button b=new Button(this);b.setAllCaps(false);b.setTextSize(14);
@@ -321,13 +350,23 @@ public final class MainActivity extends Activity {
   private void settings(){page("Настройки");body.addView(label("Установленная версия: "+BuildConfig.VERSION_NAME,15));body.addView(label("Формат: PDF",17));
     body.addView(label("Локальная папка: Протоколы поверки СИ",16));body.addView(label(folder==null?"Выберите папку один раз":"Локальная папка подключена",14));
     button("Выбрать папку на смартфоне",()->{Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);startActivityForResult(i,PICK_FOLDER);});
-    body.addView(label("Google Диск: при просмотре поверки нажмите «Сохранить PDF на Google Диск» и выберите папку через системное окно. Автоматическая синхронизация ещё не реализована.",15));
+    body.addView(label("Google Диск: сохранение PDF доступно через системное окно. Импорт новых СИ возможен из подключённой папки через системный выбор, если поставщик файлов предоставляет доступ к папкам.",15));
+    button("Выбрать папку сведений СИ",this::pickSiFolder);
+    button("Обновить справочник СИ",()->syncSiFolder(true));
     button("Открыть Google Диск",()->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://drive.google.com/drive/u/0/my-drive"))));
   }
   private void files(){page("Сохранённые PDF");body.addView(label("Последний PDF: "+pref("last","ещё нет"),15));body.addView(label("Полная история и синхронизация с Google Диском — следующие этапы разработки.",14));}
   @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null)return;
     try{if(request==PICK_FOLDER){Uri u=data.getData();getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION);folder=u;getPreferences(0).edit().putString("folder",u.toString()).apply();settings();}
-      else if(request==PICK_SAVE&&currentPdf!=null){write(data.getData());info("PDF сохранён: "+currentName);}}
+      else if(request==PICK_SAVE&&currentPdf!=null){write(data.getData());info("PDF сохранён: "+currentName);}
+      else if(request==PICK_SI_FOLDER){
+        Uri source=data.getData();
+        if(source==null)throw new IOException("Папка не выбрана");
+        getContentResolver().takePersistableUriPermission(source,Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        getPreferences(0).edit().putString("si_import_tree",source.toString()).apply();
+        methodScreen();
+        syncSiFolder(true);
+      }}
     catch(Exception e){info("Ошибка сохранения: "+e.getMessage());}
   }
   @Override protected void onDestroy(){pool.shutdownNow();super.onDestroy();}
