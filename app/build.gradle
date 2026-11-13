@@ -15,7 +15,7 @@ android {
         targetSdk 34
         // CI run number increases for each new published build.
         versionCode 1000 + (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
-        versionName '1.0.7'
+        versionName '1.0.8'
     }
 
     buildFeatures { buildConfig true }
