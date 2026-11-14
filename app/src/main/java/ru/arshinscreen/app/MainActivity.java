@@ -24,6 +24,7 @@ public final class MainActivity extends Activity {
   private static final int PICK_FOLDER=1, PICK_SAVE=2, PICK_SI_FOLDER=3;
   private final ExecutorService pool=Executors.newSingleThreadExecutor();
   private LinearLayout body, matches;
+  private ProtocolEditor protocolEditor;
   private TextView message;
   private EditText serial, verifier, from, to;
   private Uri folder;
@@ -226,6 +227,10 @@ public final class MainActivity extends Activity {
           Intent in=new Intent(Intent.ACTION_VIEW,Uri.parse(item.optString("url")));
           startActivity(in);
         });
+        button("Создать протокол поверки",()->{
+          protocolEditor=new ProtocolEditor(this,item,method,methodMeans(devices,"mieta"));
+          protocolEditor.show();
+        });
         button("К списку методик",this::methodScreen);
       });
     }
@@ -406,7 +411,8 @@ public final class MainActivity extends Activity {
     button("Открыть Google Диск",()->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://drive.google.com/drive/u/0/my-drive"))));
   }
   private void files(){page("Сохранённые PDF");body.addView(label("Последний PDF: "+pref("last","ещё нет"),15));body.addView(label("Полная история и синхронизация с Google Диском — следующие этапы разработки.",14));}
-  @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null)return;
+  @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);
+    if(protocolEditor!=null&&protocolEditor.handleSave(request,result,data))return;if(result!=RESULT_OK||data==null)return;
     try{if(request==PICK_FOLDER){Uri u=data.getData();getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION);folder=u;getPreferences(0).edit().putString("folder",u.toString()).apply();settings();}
       else if(request==PICK_SAVE&&currentPdf!=null){write(data.getData());info("PDF сохранён: "+currentName);}
       else if(request==PICK_SI_FOLDER){
