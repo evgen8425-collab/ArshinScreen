@@ -18,6 +18,7 @@ import java.util.zip.*;
 public final class ProtocolEditor {
   public static final int REQUEST_SAVE=41;
   private final Activity activity;
+  private final Runnable onBack;
   private final JSONObject device;
   private final String method;
   private final JSONArray standards;
@@ -28,8 +29,8 @@ public final class ProtocolEditor {
   private byte[] pending;
   private String pendingName,pendingType;
   private int rowCount=0;
-  public ProtocolEditor(Activity a,JSONObject d, String m,JSONArray s){
-    activity=a;device=d;method=m;standards=s;
+  public ProtocolEditor(Activity a,JSONObject d, String m,JSONArray s,Runnable back){
+    activity=a;device=d;method=m;standards=s;onBack=back;
     prefs=a.getSharedPreferences("protocol_editor",0);
   }
   private String key(){return method+"|"+device.optString("serial");}
@@ -73,6 +74,7 @@ public final class ProtocolEditor {
     btn("Сохранить черновик",v->saveDraft());
     btn("Сохранить Word (.docx)",v->export(false));
     btn("Сохранить PDF",v->export(true));
+    btn("Вернуться к сведениям СИ",v->{saveDraft();onBack.run();});
   }
   private String meansText(){
     StringBuilder s=new StringBuilder();
