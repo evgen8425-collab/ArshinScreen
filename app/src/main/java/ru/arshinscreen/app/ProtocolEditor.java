@@ -239,6 +239,24 @@ public final class ProtocolEditor {
     if(template!=null)appendAcceptanceResults(lines);
     lines.add("Дополнительные измерения:");
     boolean valid=true, failed=false;
+    int checked=0;
+    if(template!=null){
+      JSONArray tables=template.optJSONArray("verifiedTables");
+      if(tables!=null)for(int t=0;t<tables.length();t++){
+        JSONObject table=tables.optJSONObject(t);
+        if(table==null)continue;
+        JSONArray channels=table.optJSONArray("channels"),rs=table.optJSONArray("rows");
+        if(channels==null||rs==null)continue;
+        for(int ch=0;ch<channels.length();ch++)for(int i=0;i<rs.length();i++){
+          JSONArray range=rs.optJSONArray(i);if(range==null||range.length()<3)continue;
+          EditText input=acceptanceInputs.get("table_"+table.optString("id")+"_"+ch+"_"+i);
+          Double measured=input==null?null:parse(input.getText().toString());
+          if(measured==null||!Double.isFinite(measured)){valid=false;continue;}
+          checked++;
+          if(measured<range.optDouble(1)||measured>range.optDouble(2))failed=true;
+        }
+      }
+    }
     for(int i=0;i<points.size();i++){
       EditText[] p=points.get(i);
       String metric=p[0].getText().toString();
@@ -255,7 +273,7 @@ public final class ProtocolEditor {
       }
       lines.add(line);
     }
-    lines.add(!valid?"Итоговая оценка не определена: не все измерения и допуски заполнены.":(failed?"По введённым точкам: есть превышение допуска.":"По введённым точкам: превышений допуска нет."));
+    lines.add(!valid?"Оценка по контрольным точкам: не все измерения и допуски заполнены.":(failed?"Оценка по контрольным точкам: есть превышения допуска.":"Оценка по контрольным точкам: превышений допуска нет."));
     lines.add("Полное заключение о пригодности требует выполнения всех операций действующей методики.");
     return lines;
   }
