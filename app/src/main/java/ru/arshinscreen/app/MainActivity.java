@@ -101,21 +101,38 @@ public final class MainActivity extends Activity {
   }
   private JSONArray catalog(){
     JSONArray result=new JSONArray();
-    HashSet<String> known=new HashSet<>();
+    HashMap<String,JSONObject> byKey=new HashMap<>();
     try(InputStream stream=getAssets().open("si_catalog.json")){
       ByteArrayOutputStream b=new ByteArrayOutputStream();byte[] buf=new byte[4096];int n;
       while((n=stream.read(buf))!=-1)b.write(buf,0,n);
       JSONArray initial=new JSONArray(b.toString("UTF-8"));
-      for(int i=0;i<initial.length();i++)appendUnique(result,known,initial.optJSONObject(i));
+      for(int i=0;i<initial.length();i++)appendMerged(result,byKey,initial.optJSONObject(i));
     }catch(Exception ignored){}
     JSONArray saved=new SiFolderSync(this).cached();
-    for(int i=0;i<saved.length();i++)appendUnique(result,known,saved.optJSONObject(i));
+    for(int i=0;i<saved.length();i++)appendMerged(result,byKey,saved.optJSONObject(i));
     return result;
   }
-  private void appendUnique(JSONArray result,HashSet<String> known,JSONObject item){
+  private void appendMerged(JSONArray result,HashMap<String,JSONObject> byKey,JSONObject item){
     if(item==null)return;
     String key=item.optString("method").trim().toLowerCase(Locale.ROOT)+"|"+item.optString("serial").trim().toLowerCase(Locale.ROOT);
-    if(known.add(key))result.put(item);
+    JSONObject previous=byKey.get(key);
+    if(previous==null){byKey.put(key,item);result.put(item);return;}
+    JSONArray combined=new JSONArray();
+    HashSet<String> seen=new HashSet<>();
+    for(JSONArray items:new JSONArray[]{previous.optJSONArray("means"),item.optJSONArray("means")}){
+      if(items==null)continue;
+      for(int i=0;i<items.length();i++){
+        JSONObject x=items.optJSONObject(i);if(x==null)continue;
+        String id=x.optString("kind")+"|"+x.optString("etalonNumber")+"|"+x.optString("serial")+"|"+x.optString("name")+"|"+x.optString("model");
+        if(seen.add(id))combined.put(x);
+      }
+    }
+    try{
+      previous.put("means",combined);
+      for(String field:new String[]{"name","model","registry","date","source_uri","url"}){
+        if(!item.optString(field).isEmpty())previous.put(field,item.optString(field));
+      }
+    }catch(JSONException ignored){}
   }
   private void pickSiFolder(){
     Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
