@@ -29,6 +29,7 @@ public final class ProtocolEditor {
   private byte[] pending;
   private String pendingName,pendingType;
   private int rowCount=0;
+  private final LinkedHashMap<String,EditText> acceptanceInputs=new LinkedHashMap<>();
   private JSONObject template;
   public ProtocolEditor(Activity a,JSONObject d, String m,JSONArray s,Runnable back){
     activity=a;device=d;method=m;standards=s;onBack=back;
@@ -91,22 +92,14 @@ public final class ProtocolEditor {
       }
       root.addView(text("Операции, не предусмотренные модификацией, необходимо отметить как неприменимые. Измеренные значения и результаты подтверждаются поверителем.",12));
     }
-    root.addView(text("Измерения: эталон, показание СИ, предел допускаемой относительной погрешности (%)",15));
+    if(template!=null)renderAcceptanceTables(saved);
+    root.addView(text("Дополнительные измерения: эталон, показание СИ, предел допускаемой относительной погрешности (%)",15));
     root.addView(text("Контрольные точки и допуски заполняются по действующей методике. Незаданные точки не дают заключения о пригодности.",12));
     rows=new LinearLayout(activity);rows.setOrientation(1);root.addView(rows);
     JSONArray savedRows=saved.optJSONArray("rows");
     if(savedRows!=null&&savedRows.length()>0){
       for(int i=0;i<savedRows.length();i++)addRow(savedRows.optJSONObject(i));
-    }else if(template!=null){
-      JSONArray sections=template.optJSONArray("sections");
-      if(sections!=null)for(int i=0;i<sections.length();i++){
-        JSONObject op=sections.optJSONObject(i);
-        if(op==null||!op.optString("point").startsWith("7.5."))continue;
-        JSONObject preset=new JSONObject();
-        try{preset.put("metric",op.optString("point")+" "+op.optString("label"));}catch(Exception ignored){}
-        addRow(preset);
-      }
-    }else addRow(null);
+    }else if(template==null)addRow(null);
     btn("Добавить точку измерения",v->addRow(null));
     result=text("",15);root.addView(result);
     btn("Рассчитать погрешности",v->calculate());
@@ -114,6 +107,56 @@ public final class ProtocolEditor {
     btn("Сохранить Word (.docx)",v->export(false));
     btn("Сохранить PDF",v->export(true));
     btn("Вернуться к сведениям СИ",v->{saveDraft();onBack.run();});
+  }
+  private void renderAcceptanceTables(JSONObject saved){
+    JSONArray tables=template.optJSONArray("verifiedTables");
+    if(tables==null)return;
+    JSONObject old=saved.optJSONObject("acceptance");
+    root.addView(text("Контрольные точки согласно таблицам методики",18));
+    for(int t=0;t<tables.length();t++){
+      JSONObject table=tables.optJSONObject(t);if(table==null)continue;
+      root.addView(text(table.optString("title"),17));
+      JSONArray channels=table.optJSONArray("channels"),records=table.optJSONArray("rows");
+      if(channels==null||records==null)continue;
+      for(int ch=0;ch<channels.length();ch++){
+        String channel=channels.optString(ch);
+        root.addView(text("Канал: "+channel,15));
+        for(int i=0;i<records.length();i++){
+          JSONArray limits=records.optJSONArray(i);if(limits==null||limits.length()<3)continue;
+          String id="table_"+table.optString("id")+"_"+ch+"_"+i;
+          String units=table.optString("unit");
+          String label=String.format(Locale.forLanguageTag("ru-RU"),
+            "Задано: %s %s; допустимо: %s–%s %s",
+            limits.optString(0),units,limits.optString(1),limits.optString(2),units);
+          EditText input=pointInput("Показание СИ: "+label,old==null?"":old.optString(id,""));
+          root.addView(input);acceptanceInputs.put(id,input);
+        }
+      }
+    }
+  }
+  private void appendAcceptanceResults(ArrayList<String> lines){
+    JSONArray tables=template.optJSONArray("verifiedTables");if(tables==null)return;
+    lines.add("Контрольные точки, допустимые интервалы и результаты:");
+    for(int t=0;t<tables.length();t++){
+      JSONObject table=tables.optJSONObject(t);if(table==null)continue;
+      lines.add(table.optString("point")+" "+table.optString("title"));
+      JSONArray channels=table.optJSONArray("channels"),records=table.optJSONArray("rows");
+      if(channels==null||records==null)continue;
+      for(int ch=0;ch<channels.length();ch++){
+        for(int i=0;i<records.length();i++){
+          JSONArray limits=records.optJSONArray(i);if(limits==null||limits.length()<3)continue;
+          String id="table_"+table.optString("id")+"_"+ch+"_"+i;
+          EditText input=acceptanceInputs.get(id);
+          String reading=input==null?"":input.getText().toString().trim();
+          double low=limits.optDouble(1),high=limits.optDouble(2);
+          Double actual=parse(reading);
+          String evaluation=actual==null?"не заполнено":(Double.isFinite(actual)&&actual>=low&&actual<=high?"в пределах допуска":"вне допуска");
+          lines.add(channels.optString(ch)+": задание "+limits.optString(0)+" "+table.optString("unit")
+            +", допустимо "+limits.optString(1)+"–"+limits.optString(2)
+            +", показание "+reading+" — "+evaluation);
+        }
+      }
+    }
   }
   private String meansText(){
     StringBuilder s=new StringBuilder();
@@ -156,6 +199,9 @@ public final class ProtocolEditor {
     try{
       for(String k:fields.keySet())doc.put(k,value(k));
       doc.put("method",method);doc.put("rows",collectRows());
+      JSONObject values=new JSONObject();
+      for(Map.Entry<String,EditText> e:acceptanceInputs.entrySet())values.put(e.getKey(),e.getValue().getText().toString());
+      doc.put("acceptance",values);
     }catch(Exception ignored){}
     return doc;
   }
@@ -190,7 +236,8 @@ public final class ProtocolEditor {
         JSONObject x=sections.optJSONObject(i);if(x!=null)lines.add(x.optString("point")+" "+x.optString("label")+": "+value("operation_"+x.optString("id")));
       }
     }
-    lines.add("Результаты измерений:");
+    if(template!=null)appendAcceptanceResults(lines);
+    lines.add("Дополнительные измерения:");
     boolean valid=true, failed=false;
     for(int i=0;i<points.size();i++){
       EditText[] p=points.get(i);
