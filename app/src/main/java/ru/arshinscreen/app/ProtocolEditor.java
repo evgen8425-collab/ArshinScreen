@@ -273,8 +273,8 @@ public final class ProtocolEditor {
     lines.add("Перечень операций поверки:");
     String operations=templateFields.get("operationsText").getText().toString();
     if(!operations.trim().isEmpty())lines.addAll(Arrays.asList(operations.split("\\n",-1)));
-    String conditions=templateFields.get("conditionsText").getText().toString();
-    if(!conditions.trim().isEmpty()){
+    String conditionRequirements=templateFields.get("conditionsText").getText().toString();
+    if(!conditionRequirements.trim().isEmpty()){
       lines.add("Нормативные условия поверки:");
       lines.addAll(Arrays.asList(conditions.split("\\n",-1)));
     }
