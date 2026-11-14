@@ -62,6 +62,7 @@ public final class SiFolderSync {
               if(previous!=null&&uri.equals(previous.optString("source_uri"))){existing=i;break;}
             }
             if(existing>=0)catalog.put(existing,item);else {catalog.put(item);added++;}
+            new ProtocolDraftStore(context).ensure(item);
             known.add(uri);
           }
         }catch(Exception ignored){ /* A malformed PDF must not prevent other imports. */ }
