@@ -79,7 +79,7 @@ public final class ProtocolEditor {
     if(template==null)root.addView(text("Базовая форма: требования к контрольным точкам и допускам должны быть подтверждены по методике.",12));
     templateField("operationsText","Перечень операций по методике",methodTemplate.optString("operationsText",""));
     templateField("conditionsText","Нормативные условия поверки",methodTemplate.optString("conditionsText",""));
-    templateField("pointsText","Точки измерений и допускаемые значения по МП",methodTemplate.optString("pointsText",""));
+    templateField("pointsText","Точки: одна строка = величина | вид (отн/абс) | допуск | единица",methodTemplate.optString("pointsText",""));
     templateField("notes","Дополнительные указания по шаблону",methodTemplate.optString("notes",""));
     btn("Сохранить шаблон для всей методики",v->saveMethodTemplate());
 
@@ -106,13 +106,26 @@ public final class ProtocolEditor {
       root.addView(text("Операции, не предусмотренные модификацией, необходимо отметить как неприменимые. Измеренные значения и результаты подтверждаются поверителем.",12));
     }
     if(template!=null)renderAcceptanceTables(saved);
-    root.addView(text("Дополнительные измерения: эталон, показание СИ, предел допускаемой относительной погрешности (%)",15));
+    root.addView(text("Измерения: эталон, показание СИ, вид и предел допускаемой погрешности",15));
     root.addView(text("Контрольные точки и допуски заполняются по действующей методике. Незаданные точки не дают заключения о пригодности.",12));
     rows=new LinearLayout(activity);rows.setOrientation(1);root.addView(rows);
     JSONArray savedRows=saved.optJSONArray("rows");
     if(savedRows!=null&&savedRows.length()>0){
       for(int i=0;i<savedRows.length();i++)addRow(savedRows.optJSONObject(i));
-    }else if(template==null)addRow(null);
+    }else if(template==null){
+      String savedPoints=methodTemplate.optString("pointsText","");
+      for(String row:savedPoints.split("\\n")){
+        String[] parts=row.split("\\|",-1);
+        if(parts.length<3||parts[0].trim().isEmpty())continue;
+        JSONObject preset=new JSONObject();
+        try{
+          preset.put("metric",parts[0].trim()+(parts.length>=4&&(!parts[3].trim().isEmpty())?" ("+parts[3].trim()+")":""));
+          preset.put("kind",parts[1].trim());preset.put("limit",parts[2].trim());
+        }catch(Exception ignored){}
+        addRow(preset);
+      }
+      if(points.isEmpty())addRow(null);
+    }
     btn("Добавить точку измерения",v->addRow(null));
     result=text("",15);root.addView(result);
     btn("Рассчитать погрешности",v->calculate());
@@ -208,15 +221,16 @@ public final class ProtocolEditor {
     EditText metric=pointInput("Измеряемая величина / канал / единица",saved==null?"":saved.optString("metric"));
     EditText ref=pointInput("Эталонное значение",saved==null?"":saved.optString("reference"));
     EditText actual=pointInput("Показание СИ",saved==null?"":saved.optString("actual"));
-    EditText limit=pointInput("Допуск ±, %",saved==null?"":saved.optString("limit"));
-    line.addView(metric);line.addView(ref);line.addView(actual);line.addView(limit);rows.addView(line);
-    points.add(new EditText[]{metric,ref,actual,limit});rowCount++;
+    EditText limit=pointInput("Предел допускаемой погрешности, ±",saved==null?"":saved.optString("limit"));
+    EditText kind=pointInput("Вид погрешности: отн или абс",saved==null?"":saved.optString("kind"));
+    line.addView(metric);line.addView(ref);line.addView(actual);line.addView(limit);line.addView(kind);rows.addView(line);
+    points.add(new EditText[]{metric,ref,actual,limit,kind});rowCount++;
   }
   private JSONArray collectRows(){
     JSONArray rows=new JSONArray();
     for(EditText[] r:points){
       JSONObject o=new JSONObject();
-      try{o.put("metric",r[0].getText().toString());o.put("reference",r[1].getText().toString());o.put("actual",r[2].getText().toString());o.put("limit",r[3].getText().toString());}catch(Exception ignored){}
+      try{o.put("metric",r[0].getText().toString());o.put("reference",r[1].getText().toString());o.put("actual",r[2].getText().toString());o.put("limit",r[3].getText().toString());o.put("kind",r[4].getText().toString());}catch(Exception ignored){}
       rows.put(o);
     }
     return rows;
@@ -301,15 +315,17 @@ public final class ProtocolEditor {
       EditText[] p=points.get(i);
       String metric=p[0].getText().toString();
       String r=p[1].getText().toString(),a=p[2].getText().toString(),l=p[3].getText().toString();
+      String kind=p[4].getText().toString().trim().toLowerCase(Locale.ROOT);
+      boolean relative=kind.startsWith("отн"),absolute=kind.startsWith("абс");
       Double ref=parse(r),actual=parse(a),limit=parse(l);
-      String line=(i+1)+". "+metric+"; эталон: "+r+"; показание СИ: "+a+"; допуск ±"+l+" %";
-      if(ref==null||actual==null||limit==null||ref==0||limit<0){
+      String line=(i+1)+". "+metric+"; эталон: "+r+"; показание СИ: "+a+"; допуск ±"+l+(relative?" %":"");
+      if(ref==null||actual==null||limit==null||limit<0||(!relative&&!absolute)||(relative&&ref==0)){
         valid=false;line+="; погрешность не рассчитана";
       }else{
-        double error=(actual-ref)/ref*100.0;
-        boolean ok=Math.abs(error)<=limit;
+        double error=relative?(actual-ref)/ref*100.0:actual-ref;
+        boolean ok=Double.isFinite(error)&&Math.abs(error)<=limit;
         if(!ok)failed=true;
-        line+=String.format(Locale.forLanguageTag("ru-RU"),"; δ=%.3f %% — %s",error,ok?"в пределах допуска":"превышение допуска");
+        line+=String.format(Locale.forLanguageTag("ru-RU"),"; погрешность=%.3f %s — %s",error,relative?"%":"(в единицах измерения)",ok?"в пределах допуска":"превышение допуска");
       }
       lines.add(line);
     }
