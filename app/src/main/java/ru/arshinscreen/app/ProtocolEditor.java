@@ -39,8 +39,11 @@ public final class ProtocolEditor {
     prefs=a.getSharedPreferences("protocol_editor",0);
     templateStore=new ProtocolTemplateStore(a);
     methodTemplate=templateStore.get(m,d.optString("name"),d.optString("registry"));
-    if("МП АПМ 43-13".equals(m)){
-      try(InputStream stream=a.getAssets().open("mp_apm_43_13_template.json")){
+    String templatePath=null;
+    if("МП АПМ 43-13".equalsIgnoreCase(m))templatePath="mp_apm_43_13_template.json";
+    else if("МП ТИнТ 43-2012".equalsIgnoreCase(m))templatePath="mp_tint_43_2012_template.json";
+    if(templatePath!=null){
+      try(InputStream stream=a.getAssets().open(templatePath)){
         ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[4096];int n;
         while((n=stream.read(buffer))!=-1)bytes.write(buffer,0,n);
         template=new JSONObject(bytes.toString("UTF-8"));
@@ -94,7 +97,7 @@ public final class ProtocolEditor {
           field(id,condition.optString("label")+" (требование: "+condition.optString("reference")+")",saved.optString(id,""));
         }
       }
-      root.addView(text("Операции поверки согласно МП АПМ 43-13",17));
+      root.addView(text("Операции поверки согласно "+method,17));
       JSONArray sections=template.optJSONArray("sections");
       if(sections!=null){
         for(int i=0;i<sections.length();i++){
@@ -112,7 +115,11 @@ public final class ProtocolEditor {
     JSONArray savedRows=saved.optJSONArray("rows");
     if(savedRows!=null&&savedRows.length()>0){
       for(int i=0;i<savedRows.length();i++)addRow(savedRows.optJSONObject(i));
-    }else if(template==null){
+    }else {
+      JSONArray defaultPoints=template==null?null:template.optJSONArray("defaultPoints");
+      if(defaultPoints!=null)for(int i=0;i<defaultPoints.length();i++){
+        JSONObject point=defaultPoints.optJSONObject(i);if(point!=null)addRow(point);
+      }
       String savedPoints=methodTemplate.optString("pointsText","");
       for(String row:savedPoints.split("\\n")){
         String[] parts=row.split("\\|",-1);
