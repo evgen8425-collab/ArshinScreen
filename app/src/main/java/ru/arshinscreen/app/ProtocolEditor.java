@@ -276,7 +276,7 @@ public final class ProtocolEditor {
     String conditionRequirements=templateFields.get("conditionsText").getText().toString();
     if(!conditionRequirements.trim().isEmpty()){
       lines.add("Нормативные условия поверки:");
-      lines.addAll(Arrays.asList(conditions.split("\\n",-1)));
+      lines.addAll(Arrays.asList(conditionRequirements.split("\\n",-1)));
     }
     String pointsAndLimits=templateFields.get("pointsText").getText().toString();
     if(!pointsAndLimits.trim().isEmpty()){
