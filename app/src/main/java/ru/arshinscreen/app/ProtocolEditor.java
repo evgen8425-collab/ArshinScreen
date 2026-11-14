@@ -31,9 +31,14 @@ public final class ProtocolEditor {
   private int rowCount=0;
   private final LinkedHashMap<String,EditText> acceptanceInputs=new LinkedHashMap<>();
   private JSONObject template;
+  private final ProtocolTemplateStore templateStore;
+  private final JSONObject methodTemplate;
+  private final LinkedHashMap<String,EditText> templateFields=new LinkedHashMap<>();
   public ProtocolEditor(Activity a,JSONObject d, String m,JSONArray s,Runnable back){
     activity=a;device=d;method=m;standards=s;onBack=back;
     prefs=a.getSharedPreferences("protocol_editor",0);
+    templateStore=new ProtocolTemplateStore(a);
+    methodTemplate=templateStore.get(m,d.optString("name"),d.optString("registry"));
     if("МП АПМ 43-13".equals(m)){
       try(InputStream stream=a.getAssets().open("mp_apm_43_13_template.json")){
         ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[4096];int n;
@@ -70,6 +75,14 @@ public final class ProtocolEditor {
     field("registry","Госреестр",saved.optString("registry",device.optString("registry")));
     field("verifier","Поверитель",saved.optString("verifier","Климов А.В."));
     field("means","Применяемые эталоны (можно отредактировать)",saved.optString("means",meansText()));
+    root.addView(text("Шаблон методики — используется для всех приборов с этой МП",17));
+    if(template==null)root.addView(text("Базовая форма: требования к контрольным точкам и допускам должны быть подтверждены по методике.",12));
+    templateField("operationsText","Перечень операций по методике",methodTemplate.optString("operationsText",""));
+    templateField("conditionsText","Нормативные условия поверки",methodTemplate.optString("conditionsText",""));
+    templateField("pointsText","Точки измерений и допускаемые значения по МП",methodTemplate.optString("pointsText",""));
+    templateField("notes","Дополнительные указания по шаблону",methodTemplate.optString("notes",""));
+    btn("Сохранить шаблон для всей методики",v->saveMethodTemplate());
+
     if(template!=null){
       root.addView(text("Периодическая поверка — "+template.optString("revision"),16));
       JSONArray conditions=template.optJSONArray("conditions");
@@ -158,6 +171,20 @@ public final class ProtocolEditor {
       }
     }
   }
+  private void templateField(String id,String label,String fallback){
+    root.addView(text(label,14));
+    EditText e=new EditText(activity);e.setSingleLine(false);e.setMinLines(2);
+    e.setText(fallback);e.setTextSize(14);root.addView(e);
+    templateFields.put(id,e);
+  }
+  private void saveMethodTemplate(){
+    try{
+      for(Map.Entry<String,EditText> entry:templateFields.entrySet())
+        methodTemplate.put(entry.getKey(),entry.getValue().getText().toString());
+      templateStore.save(method,methodTemplate);
+      Toast.makeText(activity,"Шаблон методики сохранён",Toast.LENGTH_SHORT).show();
+    }catch(Exception e){Toast.makeText(activity,"Не удалось сохранить шаблон",Toast.LENGTH_LONG).show();}
+  }
   private String meansText(){
     StringBuilder s=new StringBuilder();
     for(int i=0;i<standards.length();i++){
@@ -222,6 +249,19 @@ public final class ProtocolEditor {
     lines.add("Госреестр: "+value("registry"));
     lines.add("Методика поверки: "+method);
     lines.add("Поверитель: "+value("verifier"));
+    lines.add("Перечень операций поверки:");
+    String operations=templateFields.get("operationsText").getText().toString();
+    if(!operations.trim().isEmpty())lines.addAll(Arrays.asList(operations.split("\\n",-1)));
+    String conditions=templateFields.get("conditionsText").getText().toString();
+    if(!conditions.trim().isEmpty()){
+      lines.add("Нормативные условия поверки:");
+      lines.addAll(Arrays.asList(conditions.split("\\n",-1)));
+    }
+    String pointsAndLimits=templateFields.get("pointsText").getText().toString();
+    if(!pointsAndLimits.trim().isEmpty()){
+      lines.add("Контрольные точки и допускаемые значения:");
+      lines.addAll(Arrays.asList(pointsAndLimits.split("\\n",-1)));
+    }
     lines.add("Применяемые эталоны:");
     lines.addAll(Arrays.asList(value("means").split("\n",-1)));
     if(template!=null){
