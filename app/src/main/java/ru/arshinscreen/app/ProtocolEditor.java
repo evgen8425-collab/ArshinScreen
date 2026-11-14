@@ -29,9 +29,17 @@ public final class ProtocolEditor {
   private byte[] pending;
   private String pendingName,pendingType;
   private int rowCount=0;
+  private JSONObject template;
   public ProtocolEditor(Activity a,JSONObject d, String m,JSONArray s,Runnable back){
     activity=a;device=d;method=m;standards=s;onBack=back;
     prefs=a.getSharedPreferences("protocol_editor",0);
+    if("МП АПМ 43-13".equals(m)){
+      try(InputStream stream=a.getAssets().open("mp_apm_43_13_template.json")){
+        ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[4096];int n;
+        while((n=stream.read(buffer))!=-1)bytes.write(buffer,0,n);
+        template=new JSONObject(bytes.toString("UTF-8"));
+      }catch(Exception ignored){}
+    }
   }
   private String key(){return method+"|"+device.optString("serial");}
   private int dp(int i){return (int)(i*activity.getResources().getDisplayMetrics().density+.5f);}
@@ -61,12 +69,43 @@ public final class ProtocolEditor {
     field("registry","Госреестр",saved.optString("registry",device.optString("registry")));
     field("verifier","Поверитель",saved.optString("verifier","Климов А.В."));
     field("means","Применяемые эталоны (можно отредактировать)",saved.optString("means",meansText()));
+    if(template!=null){
+      root.addView(text("Периодическая поверка — "+template.optString("revision"),16));
+      JSONArray conditions=template.optJSONArray("conditions");
+      if(conditions!=null){
+        root.addView(text("Условия проведения поверки",17));
+        for(int i=0;i<conditions.length();i++){
+          JSONObject condition=conditions.optJSONObject(i);if(condition==null)continue;
+          String id="condition_"+condition.optString("id");
+          field(id,condition.optString("label")+" (требование: "+condition.optString("reference")+")",saved.optString(id,""));
+        }
+      }
+      root.addView(text("Операции поверки согласно МП АПМ 43-13",17));
+      JSONArray sections=template.optJSONArray("sections");
+      if(sections!=null){
+        for(int i=0;i<sections.length();i++){
+          JSONObject section=sections.optJSONObject(i);if(section==null)continue;
+          String id="operation_"+section.optString("id");
+          field(id,"Пункт "+section.optString("point")+" — "+section.optString("label"),saved.optString(id,""));
+        }
+      }
+      root.addView(text("Операции, не предусмотренные модификацией, необходимо отметить как неприменимые. Измеренные значения и результаты подтверждаются поверителем.",12));
+    }
     root.addView(text("Измерения: эталон, показание СИ, предел допускаемой относительной погрешности (%)",15));
     root.addView(text("Контрольные точки и допуски заполняются по действующей методике. Незаданные точки не дают заключения о пригодности.",12));
     rows=new LinearLayout(activity);rows.setOrientation(1);root.addView(rows);
     JSONArray savedRows=saved.optJSONArray("rows");
     if(savedRows!=null&&savedRows.length()>0){
       for(int i=0;i<savedRows.length();i++)addRow(savedRows.optJSONObject(i));
+    }else if(template!=null){
+      JSONArray sections=template.optJSONArray("sections");
+      if(sections!=null)for(int i=0;i<sections.length();i++){
+        JSONObject op=sections.optJSONObject(i);
+        if(op==null||!op.optString("point").startsWith("7.5."))continue;
+        JSONObject preset=new JSONObject();
+        try{preset.put("metric",op.optString("point")+" "+op.optString("label"));}catch(Exception ignored){}
+        addRow(preset);
+      }
     }else addRow(null);
     btn("Добавить точку измерения",v->addRow(null));
     result=text("",15);root.addView(result);
@@ -96,17 +135,18 @@ public final class ProtocolEditor {
   private void addRow(JSONObject saved){
     LinearLayout line=new LinearLayout(activity);line.setOrientation(1);
     line.addView(text("Точка "+(points.size()+1),14));
+    EditText metric=pointInput("Измеряемая величина / канал / единица",saved==null?"":saved.optString("metric"));
     EditText ref=pointInput("Эталонное значение",saved==null?"":saved.optString("reference"));
     EditText actual=pointInput("Показание СИ",saved==null?"":saved.optString("actual"));
     EditText limit=pointInput("Допуск ±, %",saved==null?"":saved.optString("limit"));
-    line.addView(ref);line.addView(actual);line.addView(limit);rows.addView(line);
-    points.add(new EditText[]{ref,actual,limit});rowCount++;
+    line.addView(metric);line.addView(ref);line.addView(actual);line.addView(limit);rows.addView(line);
+    points.add(new EditText[]{metric,ref,actual,limit});rowCount++;
   }
   private JSONArray collectRows(){
     JSONArray rows=new JSONArray();
     for(EditText[] r:points){
       JSONObject o=new JSONObject();
-      try{o.put("reference",r[0].getText().toString());o.put("actual",r[1].getText().toString());o.put("limit",r[2].getText().toString());}catch(Exception ignored){}
+      try{o.put("metric",r[0].getText().toString());o.put("reference",r[1].getText().toString());o.put("actual",r[2].getText().toString());o.put("limit",r[3].getText().toString());}catch(Exception ignored){}
       rows.put(o);
     }
     return rows;
@@ -138,13 +178,26 @@ public final class ProtocolEditor {
     lines.add("Поверитель: "+value("verifier"));
     lines.add("Применяемые эталоны:");
     lines.addAll(Arrays.asList(value("means").split("\n",-1)));
+    if(template!=null){
+      lines.add("Условия поверки:");
+      JSONArray conditions=template.optJSONArray("conditions");
+      if(conditions!=null)for(int i=0;i<conditions.length();i++){
+        JSONObject x=conditions.optJSONObject(i);if(x!=null)lines.add(x.optString("label")+": "+value("condition_"+x.optString("id")));
+      }
+      lines.add("Операции поверки:");
+      JSONArray sections=template.optJSONArray("sections");
+      if(sections!=null)for(int i=0;i<sections.length();i++){
+        JSONObject x=sections.optJSONObject(i);if(x!=null)lines.add(x.optString("point")+" "+x.optString("label")+": "+value("operation_"+x.optString("id")));
+      }
+    }
     lines.add("Результаты измерений:");
     boolean valid=true, failed=false;
     for(int i=0;i<points.size();i++){
       EditText[] p=points.get(i);
-      String r=p[0].getText().toString(),a=p[1].getText().toString(),l=p[2].getText().toString();
+      String metric=p[0].getText().toString();
+      String r=p[1].getText().toString(),a=p[2].getText().toString(),l=p[3].getText().toString();
       Double ref=parse(r),actual=parse(a),limit=parse(l);
-      String line=(i+1)+". Эталон: "+r+"; показание СИ: "+a+"; допуск ±"+l+" %";
+      String line=(i+1)+". "+metric+"; эталон: "+r+"; показание СИ: "+a+"; допуск ±"+l+" %";
       if(ref==null||actual==null||limit==null||ref==0||limit<0){
         valid=false;line+="; погрешность не рассчитана";
       }else{
