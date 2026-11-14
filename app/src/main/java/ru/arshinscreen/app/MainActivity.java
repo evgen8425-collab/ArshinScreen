@@ -155,6 +155,8 @@ public final class MainActivity extends Activity {
     page("Методики СИ");
     body.addView(label("Приборы из Google Диска / АршинСкрин / Сведения си",14));
     JSONArray all=catalog();
+    ProtocolDraftStore drafts=new ProtocolDraftStore(this);
+    for(int i=0;i<all.length();i++)drafts.ensure(all.optJSONObject(i));
     java.util.TreeMap<String,ArrayList<JSONObject>> groups=new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     for(int i=0;i<all.length();i++){
       JSONObject item=all.optJSONObject(i);if(item==null)continue;
