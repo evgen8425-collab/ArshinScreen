@@ -228,7 +228,7 @@ public final class MainActivity extends Activity {
           startActivity(in);
         });
         button("Создать протокол поверки",()->{
-          protocolEditor=new ProtocolEditor(this,item,method,methodMeans(devices,"mieta"));
+          protocolEditor=new ProtocolEditor(this,item,method,methodMeans(devices,"mieta"),()->methodDevices(method,devices));
           protocolEditor.show();
         });
         button("К списку методик",this::methodScreen);
